@@ -1,42 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Purple Space Chat</title>
 <style>
 * { box-sizing: border-box; font-family: Arial, sans-serif; }
 body { margin: 0; background: black; color: #eee; overflow: hidden; }
 canvas { position: fixed; inset: 0; z-index: -1; }
-#login { height: 100vh; display: flex; align-items: center; justify-content: center; }
+
 .card { background: rgba(60,0,90,0.85); padding: 25px; border-radius: 12px; width: 360px; box-shadow: 0 0 25px purple; }
 input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
 button { background: black; color: white; border: 1px solid purple; cursor: pointer; }
 button:hover { background: purple; }
-#app { display: none; height: 100vh; }
+
+#error { color:red; margin-top:8px; display:block; }
+
+#siteAccess, #login, #app { height:100vh; display:flex; align-items:center; justify-content:center; flex-direction: column; }
+
+#app { display:none; width:100%; flex-direction: column; }
 #layout { display: flex; height: 100%; }
 #sidebar { width: 260px; background: #120018; padding: 10px; overflow-y: auto; }
-#usersList { margin-top: 10px; }
 .sidebarItem { padding: 6px; border-radius: 4px; cursor: pointer; }
 .sidebarItem:hover { background: rgba(128,0,128,0.3); }
 .sidebarItem.active { background: purple; color: white; font-weight: bold; }
-#addPersonBtn { width: 26px; height: 26px; border-radius: 50%; background: black; border: 1px solid purple; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 10px; }
-#addPersonBtn:hover { background: purple; }
-#chatArea { flex: 1; display: flex; flex-direction: column; }
-#messages { flex: 1; padding: 10px; overflow-y: auto; }
-.msg { background: rgba(128,0,128,0.4); padding: 6px; margin-bottom: 6px; border-radius: 6px; }
-footer { display: flex; gap: 6px; padding: 10px; }
+
+#chatArea { flex:1; display:flex; flex-direction: column; }
+#messages { flex:1; padding:10px; overflow-y:auto; }
+.msg { background: rgba(128,0,128,0.4); padding:6px; margin-bottom:6px; border-radius:6px; }
+footer { display:flex; gap:6px; padding:10px; }
 </style>
 </head>
 <body>
 <canvas id="space"></canvas>
 
+<!-- SITE ACCESS PASSWORD -->
+<div id="siteAccess">
+  <div class="card">
+    <h2>Enter Site Password</h2>
+    <input id="sitePass" type="password">
+    <div id="siteError" class="error" style="display:none;"></div>
+    <button onclick="checkSitePass()">Enter</button>
+  </div>
+</div>
+
 <!-- LOGIN -->
 <div id="login">
   <div class="card">
-    <h2>Enter Access Password</h2>
-    <input id="accessPass" type="password" placeholder="1886" />
-    <button onclick="checkAccess()">Enter</button>
+    <h2>Login</h2>
+    <input id="loginUser" placeholder="Username">
+    <input id="loginPass" type="password">
+    <div id="loginError" class="error" style="display:none;"></div>
+    <button onclick="login()">Login</button>
   </div>
 </div>
 
@@ -48,12 +63,11 @@ footer { display: flex; gap: 6px; padding: 10px; }
       <div id="globalChat" class="sidebarItem">Everyone</div>
       <h3>💬 Users</h3>
       <div id="usersList"></div>
-      <button id="addPersonBtn" title="Add person">+</button>
     </div>
     <div id="chatArea">
       <div id="messages"></div>
       <footer>
-        <input id="msgInput" placeholder="Message..." />
+        <input id="msgInput" placeholder="Message...">
         <button onclick="sendMessage()">Send</button>
       </footer>
     </div>
@@ -61,95 +75,122 @@ footer { display: flex; gap: 6px; padding: 10px; }
 </div>
 
 <script>
-// Mock Preview Version (no Firebase, just for UI preview)
-const loginEl = document.getElementById('login');
-const appEl = document.getElementById('app');
-const messagesEl = document.getElementById('messages');
-const msgInputEl = document.getElementById('msgInput');
-const usersListEl = document.getElementById('usersList');
-const addPersonBtn = document.getElementById('addPersonBtn');
-const globalChatEl = document.getElementById('globalChat');
+// --- USERS ---
+let usersDB = {
+  "Faheemah": "9846",
+  "SamuelR": "5891",
+  "SamuelC": "2339",
+  "Ethan": "8213",
+  "Elnathan": "9999",
+  "Caroline": "4006",
+  "Molly": "2296",
+  "Zara": "6701",
+  "Danny": "7494",
+  "Shell-Lee": "0754",
+  "Raygan": "5124",
+  "Jacob": "7596",
+  "Nathan": "2006",
+  "Kiera": "4888",
+  "Karter": "1115",
+  "Meadleen": "5565",
+  "Eli": "0758",
+  "Hadlee": "9160"
+};
 
-let currentUser = 'user_1234';
+let currentUser = null;
 let currentChat = 'global';
-let users = ['Alice','Bob','Charlie','David'];
+let chatHistory = { global:[] };
 
-function checkAccess(){
-  const pass = document.getElementById('accessPass').value.trim();
-  if(pass === '1886'){
-    loginEl.style.display='none';
-    appEl.style.display='flex';
-    updateSidebarUsers();
-    openGlobal();
-  } else alert('Wrong password');
+// --- SITE ACCESS ---
+const SITE_PASSWORD = "1886";
+function checkSitePass() {
+  const val = document.getElementById('sitePass').value.trim();
+  const err = document.getElementById('siteError');
+  if(val === SITE_PASSWORD){
+    document.getElementById('siteAccess').style.display = 'none';
+    document.getElementById('login').style.display = 'flex';
+    err.style.display = 'none';
+  } else {
+    err.textContent = "Wrong site password";
+    err.style.display = "block";
+  }
 }
 
-function updateSidebarUsers(){
-  usersListEl.innerHTML='';
-  users.forEach(u=>{
-    const div = document.createElement('div');
-    div.className='sidebarItem';
-    div.textContent=u;
-    div.addEventListener('click', ()=>{
-      currentChat=u;
-      setActiveChat(div);
-      renderMessages();
-    });
-    usersListEl.appendChild(div);
+// --- LOGIN ---
+function login() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const err = document.getElementById('loginError');
+  if(usersDB[u] && usersDB[u] === p){
+    currentUser = u;
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    renderSidebarUsers();
+    renderMessages();
+    err.style.display = 'none';
+  } else {
+    err.textContent = "Wrong username or PIN";
+    err.style.display = 'block';
+  }
+}
+
+// --- SIDEBAR ---
+function renderSidebarUsers(){
+  const list=document.getElementById('usersList');
+  list.innerHTML='';
+  Object.keys(usersDB).forEach(u=>{
+    if(u!==currentUser){
+      const div=document.createElement('div');
+      div.className='sidebarItem';
+      div.textContent=u;
+      div.onclick=()=>{
+        currentChat=[currentUser,u].sort().join('_');
+        setActiveChat(div);
+        renderMessages();
+      };
+      list.appendChild(div);
+    }
   });
+  setActiveChat(currentChat==='global'?document.getElementById('globalChat'):null);
 }
 
 function setActiveChat(el){
   document.querySelectorAll('.sidebarItem').forEach(x=>x.classList.remove('active'));
-  globalChatEl.classList.remove('active');
-  el.classList.add('active');
+  document.getElementById('globalChat').classList.remove('active');
+  if(el) el.classList.add('active');
 }
 
-function openGlobal(){
+document.getElementById('globalChat').onclick=()=>{
   currentChat='global';
-  document.querySelectorAll('.sidebarItem').forEach(x=>x.classList.remove('active'));
-  globalChatEl.classList.add('active');
+  setActiveChat(document.getElementById('globalChat'));
   renderMessages();
-}
-
-addPersonBtn.addEventListener('click',()=>{
-  const name = prompt('Enter username to add');
-  if(!name) return;
-  users.push(name.trim());
-  updateSidebarUsers();
-});
-
-// Mock messages
-let chatHistory = {
-  'global':[{user:'Alice',text:'Hello!'}],
-  'Alice':[ {user:'Alice',text:'Hey there!'} ],
-  'Bob':[ {user:'Bob',text:'Yo!'} ],
-  'Charlie':[],
-  'David':[]
 };
 
+// --- MESSAGES ---
 function renderMessages(){
+  const messagesEl = document.getElementById('messages');
   messagesEl.innerHTML='';
   const msgs = chatHistory[currentChat] || [];
   msgs.forEach(m=>{
-    const d = document.createElement('div');
+    const d=document.createElement('div');
     d.className='msg';
-    d.textContent = m.user+': '+m.text;
+    d.textContent=m.user+': '+m.text;
     messagesEl.appendChild(d);
   });
+  messagesEl.scrollTop=messagesEl.scrollHeight;
 }
 
 function sendMessage(){
-  if(!msgInputEl.value) return;
-  const msg = {user: currentUser, text: msgInputEl.value};
+  const val=document.getElementById('msgInput').value.trim();
+  if(!val) return;
   if(!chatHistory[currentChat]) chatHistory[currentChat]=[];
-  chatHistory[currentChat].push(msg);
-  msgInputEl.value='';
+  chatHistory[currentChat].push({user:currentUser,text:val});
+  document.getElementById('msgInput').value='';
   renderMessages();
 }
 </script>
 
-<!-- STARFIELD BACKGROUND -->
+<!-- STARFIELD -->
 <script>
 const c=document.getElementById('space');
 const ctx=c.getContext('2d');
@@ -160,7 +201,7 @@ let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*
   ctx.clearRect(0,0,c.width,c.height);
   stars.forEach(s=>{
     s.a += (Math.random()-0.5)*0.05;
-    s.a = Math.max(0, Math.min(1,s.a));
+    s.a=Math.max(0,Math.min(1,s.a));
     ctx.fillStyle=`rgba(255,255,255,${s.a})`;
     ctx.beginPath();
     ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
@@ -169,6 +210,5 @@ let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*
   requestAnimationFrame(anim);
 })();
 </script>
-
 </body>
 </html>
