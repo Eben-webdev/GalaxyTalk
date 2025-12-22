@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Purple Space Chat</title>
+<style>
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
+body { margin: 0; background: black; color: #eee; overflow: hidden; }
+canvas { position: fixed; inset: 0; z-index: -1; }
+#login { height: 100vh; display: flex; align-items: center; justify-content: center; }
+.card { background: rgba(60,0,90,0.85); padding: 25px; border-radius: 12px; width: 360px; box-shadow: 0 0 25px purple; }
+input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
+button { background: black; color: white; border: 1px solid purple; cursor: pointer; }
+button:hover { background: purple; }
+#app { display: none; height: 100vh; }
+#layout { display: flex; height: 100%; }
+#sidebar { width: 260px; background: #120018; padding: 10px; overflow-y: auto; }
+#usersList { margin-top: 10px; }
+.sidebarItem { padding: 6px; border-radius: 4px; cursor: pointer; }
+.sidebarItem:hover { background: rgba(128,0,128,0.3); }
+.sidebarItem.active { background: purple; color: white; font-weight: bold; }
+#addPersonBtn { width: 26px; height: 26px; border-radius: 50%; background: black; border: 1px solid purple; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 10px; }
+#addPersonBtn:hover { background: purple; }
+#chatArea { flex: 1; display: flex; flex-direction: column; }
+#messages { flex: 1; padding: 10px; overflow-y: auto; }
+.msg { background: rgba(128,0,128,0.4); padding: 6px; margin-bottom: 6px; border-radius: 6px; }
+footer { display: flex; gap: 6px; padding: 10px; }
+</style>
+</head>
+<body>
+<canvas id="space"></canvas>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="card">
+    <h2>Enter Access Password</h2>
+    <input id="accessPass" type="password" placeholder="1886" />
+    <button onclick="checkAccess()">Enter</button>
+  </div>
+</div>
+
+<!-- CHAT APP -->
+<div id="app">
+  <div id="layout">
+    <div id="sidebar">
+      <h3>🌍 Global</h3>
+      <div id="globalChat" class="sidebarItem">Everyone</div>
+      <h3>💬 Users</h3>
+      <div id="usersList"></div>
+      <button id="addPersonBtn" title="Add person">+</button>
+    </div>
+    <div id="chatArea">
+      <div id="messages"></div>
+      <footer>
+        <input id="msgInput" placeholder="Message..." />
+        <button onclick="sendMessage()">Send</button>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<script>
+// Mock Preview Version (no Firebase, just for UI preview)
+const loginEl = document.getElementById('login');
+const appEl = document.getElementById('app');
+const messagesEl = document.getElementById('messages');
+const msgInputEl = document.getElementById('msgInput');
+const usersListEl = document.getElementById('usersList');
+const addPersonBtn = document.getElementById('addPersonBtn');
+const globalChatEl = document.getElementById('globalChat');
+
+let currentUser = 'user_1234';
+let currentChat = 'global';
+let users = ['Alice','Bob','Charlie','David'];
+
+function checkAccess(){
+  const pass = document.getElementById('accessPass').value.trim();
+  if(pass === '1886'){
+    loginEl.style.display='none';
+    appEl.style.display='flex';
+    updateSidebarUsers();
+    openGlobal();
+  } else alert('Wrong password');
+}
+
+function updateSidebarUsers(){
+  usersListEl.innerHTML='';
+  users.forEach(u=>{
+    const div = document.createElement('div');
+    div.className='sidebarItem';
+    div.textContent=u;
+    div.addEventListener('click', ()=>{
+      currentChat=u;
+      setActiveChat(div);
+      renderMessages();
+    });
+    usersListEl.appendChild(div);
+  });
+}
+
+function setActiveChat(el){
+  document.querySelectorAll('.sidebarItem').forEach(x=>x.classList.remove('active'));
+  globalChatEl.classList.remove('active');
+  el.classList.add('active');
+}
+
+function openGlobal(){
+  currentChat='global';
+  document.querySelectorAll('.sidebarItem').forEach(x=>x.classList.remove('active'));
+  globalChatEl.classList.add('active');
+  renderMessages();
+}
+
+addPersonBtn.addEventListener('click',()=>{
+  const name = prompt('Enter username to add');
+  if(!name) return;
+  users.push(name.trim());
+  updateSidebarUsers();
+});
+
+// Mock messages
+let chatHistory = {
+  'global':[{user:'Alice',text:'Hello!'}],
+  'Alice':[ {user:'Alice',text:'Hey there!'} ],
+  'Bob':[ {user:'Bob',text:'Yo!'} ],
+  'Charlie':[],
+  'David':[]
+};
+
+function renderMessages(){
+  messagesEl.innerHTML='';
+  const msgs = chatHistory[currentChat] || [];
+  msgs.forEach(m=>{
+    const d = document.createElement('div');
+    d.className='msg';
+    d.textContent = m.user+': '+m.text;
+    messagesEl.appendChild(d);
+  });
+}
+
+function sendMessage(){
+  if(!msgInputEl.value) return;
+  const msg = {user: currentUser, text: msgInputEl.value};
+  if(!chatHistory[currentChat]) chatHistory[currentChat]=[];
+  chatHistory[currentChat].push(msg);
+  msgInputEl.value='';
+  renderMessages();
+}
+</script>
+
+<!-- STARFIELD BACKGROUND -->
+<script>
+const c=document.getElementById('space');
+const ctx=c.getContext('2d');
+function resize(){c.width=innerWidth;c.height=innerHeight;}
+window.onresize=resize; resize();
+let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
+(function anim(){
+  ctx.clearRect(0,0,c.width,c.height);
+  stars.forEach(s=>{
+    s.a += (Math.random()-0.5)*0.05;
+    s.a = Math.max(0, Math.min(1,s.a));
+    ctx.fillStyle=`rgba(255,255,255,${s.a})`;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  requestAnimationFrame(anim);
+})();
+</script>
+
+</body>
+</html>
