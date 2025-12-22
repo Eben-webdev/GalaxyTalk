@@ -14,7 +14,7 @@ input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px
 button { background: black; color: white; border: 1px solid purple; cursor: pointer; }
 button:hover { background: purple; }
 
-#error { color:red; margin-top:8px; display:block; }
+.error { color:red; margin-top:8px; display:block; }
 
 #siteAccess, #login, #app { height:100vh; display:flex; align-items:center; justify-content:center; flex-direction: column; }
 
@@ -74,7 +74,22 @@ footer { display:flex; gap:6px; padding:10px; }
   </div>
 </div>
 
-<script>
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID"
+};
+
+const fb = initializeApp(firebaseConfig);
+const db = getDatabase(fb);
+
 // --- USERS ---
 let usersDB = {
   "Faheemah": "9846",
@@ -99,7 +114,6 @@ let usersDB = {
 
 let currentUser = null;
 let currentChat = 'global';
-let chatHistory = { global:[] };
 
 // --- SITE ACCESS ---
 const SITE_PASSWORD = "1886";
@@ -123,10 +137,12 @@ function login() {
   const err = document.getElementById('loginError');
   if(usersDB[u] && usersDB[u] === p){
     currentUser = u;
+    // Add user to Firebase if not exists
+    set(ref(db, 'users/' + currentUser), { name: currentUser });
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     renderSidebarUsers();
-    renderMessages();
+    openGlobal();
     err.style.display = 'none';
   } else {
     err.textContent = "Wrong username or PIN";
@@ -146,7 +162,7 @@ function renderSidebarUsers(){
       div.onclick=()=>{
         currentChat=[currentUser,u].sort().join('_');
         setActiveChat(div);
-        renderMessages();
+        listenMessages('dm/' + currentChat);
       };
       list.appendChild(div);
     }
@@ -160,33 +176,37 @@ function setActiveChat(el){
   if(el) el.classList.add('active');
 }
 
-document.getElementById('globalChat').onclick=()=>{
+document.getElementById('globalChat').onclick=openGlobal;
+
+function openGlobal(){
   currentChat='global';
   setActiveChat(document.getElementById('globalChat'));
-  renderMessages();
-};
-
-// --- MESSAGES ---
-function renderMessages(){
-  const messagesEl = document.getElementById('messages');
-  messagesEl.innerHTML='';
-  const msgs = chatHistory[currentChat] || [];
-  msgs.forEach(m=>{
-    const d=document.createElement('div');
-    d.className='msg';
-    d.textContent=m.user+': '+m.text;
-    messagesEl.appendChild(d);
-  });
-  messagesEl.scrollTop=messagesEl.scrollHeight;
+  listenMessages('global');
 }
 
-function sendMessage(){
-  const val=document.getElementById('msgInput').value.trim();
+// --- MESSAGES ---
+function listenMessages(path){
+  const messagesEl = document.getElementById('messages');
+  messagesEl.innerHTML='';
+  const messagesRef = ref(db, 'messages/' + path);
+  onValue(messagesRef, snap=>{
+    messagesEl.innerHTML='';
+    snap.forEach(m=>{
+      const d = document.createElement('div');
+      d.className='msg';
+      d.textContent=m.val().user + ': ' + m.val().text;
+      messagesEl.appendChild(d);
+    });
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  });
+}
+
+window.sendMessage = ()=>{
+  const val = document.getElementById('msgInput').value.trim();
   if(!val) return;
-  if(!chatHistory[currentChat]) chatHistory[currentChat]=[];
-  chatHistory[currentChat].push({user:currentUser,text:val});
+  const path = currentChat==='global' ? 'global' : 'dm/' + currentChat;
+  push(ref(db, 'messages/' + path), { user: currentUser, text: val });
   document.getElementById('msgInput').value='';
-  renderMessages();
 }
 </script>
 
