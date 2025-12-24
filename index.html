@@ -3,232 +3,291 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Purple Space Chat</title>
+<title>GalaxyTalk</title>
+
 <style>
-* { box-sizing: border-box; font-family: Arial, sans-serif; }
-body { margin: 0; background: black; color: #eee; overflow: hidden; }
-canvas { position: fixed; inset: 0; z-index: -1; }
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{margin:0;background:#0b0f2a;color:#fff;height:100vh;overflow:hidden}
+.hidden{display:none}
 
-.card { background: rgba(60,0,90,0.85); padding: 25px; border-radius: 12px; width: 360px; box-shadow: 0 0 25px purple; }
-input, button { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
-button { background: black; color: white; border: 1px solid purple; cursor: pointer; }
-button:hover { background: purple; }
+button{cursor:pointer;background:#6a5cff;color:#fff;border:none;border-radius:6px;padding:8px}
 
-.error { color:red; margin-top:8px; display:block; }
+input{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border-radius:6px;
+  border:none;
+}
 
-#siteAccess, #login, #app { height:100vh; display:flex; align-items:center; justify-content:center; flex-direction: column; }
+.error{color:#ff6b6b;font-size:14px;height:16px}
 
-#app { display:none; width:100%; flex-direction: column; }
-#layout { display: flex; height: 100%; }
-#sidebar { width: 260px; background: #120018; padding: 10px; overflow-y: auto; }
-.sidebarItem { padding: 6px; border-radius: 4px; cursor: pointer; }
-.sidebarItem:hover { background: rgba(128,0,128,0.3); }
-.sidebarItem.active { background: purple; color: white; font-weight: bold; }
+/* Screens */
+#siteAccess,#login{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-#chatArea { flex:1; display:flex; flex-direction: column; }
-#messages { flex:1; padding:10px; overflow-y:auto; }
-.msg { background: rgba(128,0,128,0.4); padding:6px; margin-bottom:6px; border-radius:6px; }
-footer { display:flex; gap:6px; padding:10px; }
+.box{
+  background:#141a4f;
+  padding:25px;
+  border-radius:12px;
+  width:300px;
+  text-align:center;
+}
+
+/* Layout */
+#app{display:flex;height:100vh}
+
+#sidebar{
+  width:260px;
+  background:#0f1440;
+  display:flex;
+  flex-direction:column;
+}
+
+#users{
+  flex:1;
+  overflow-y:auto;
+}
+
+.user{
+  padding:10px;
+  border-bottom:1px solid #222;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#777;
+}
+.online{background:#4cff4c}
+
+/* Chat */
+#chat{flex:1;display:flex;flex-direction:column}
+
+#messages{
+  flex:1;
+  overflow-y:auto;
+  padding:10px;
+}
+
+.msg{margin-bottom:6px}
+.me{color:#7aa2ff}
+
+#inputBar{
+  display:flex;
+  padding:10px;
+  background:#0f1440;
+  gap:6px;
+}
+
+#msgInput{flex:1}
+
+/* Settings */
+#settingsBtn{
+  position:absolute;
+  bottom:10px;
+  left:10px;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+}
+
+#settingsPanel{
+  position:absolute;
+  bottom:60px;
+  left:10px;
+  background:#141a4f;
+  padding:15px;
+  border-radius:10px;
+  width:220px;
+}
 </style>
 </head>
-<body>
-<canvas id="space"></canvas>
 
-<!-- SITE ACCESS PASSWORD -->
+<body>
+
+<!-- SITE ACCESS -->
 <div id="siteAccess">
-  <div class="card">
-    <h2>Enter Site Password</h2>
+  <div class="box">
+    <h2>GalaxyTalk</h2>
     <input id="sitePass" type="password">
-    <div id="siteError" class="error" style="display:none;"></div>
-    <button onclick="checkSitePass()">Enter</button>
+    <div id="siteErr" class="error"></div>
+    <button onclick="checkSite()">Enter</button>
   </div>
 </div>
 
 <!-- LOGIN -->
-<div id="login">
-  <div class="card">
-    <h2>Login</h2>
-    <input id="loginUser" placeholder="Username">
-    <input id="loginPass" type="password">
-    <div id="loginError" class="error" style="display:none;"></div>
-    <button onclick="login()">Login</button>
+<div id="login" class="hidden">
+  <div class="box">
+    <h3>Login</h3>
+    <input id="userInput">
+    <input id="pinInput" type="password">
+    <div id="loginErr" class="error"></div>
+    <button onclick="loginUser()">Login</button>
   </div>
 </div>
 
-<!-- CHAT APP -->
-<div id="app">
-  <div id="layout">
-    <div id="sidebar">
-      <h3>🌍 Global</h3>
-      <div id="globalChat" class="sidebarItem">Everyone</div>
-      <h3>💬 Users</h3>
-      <div id="usersList"></div>
+<!-- APP -->
+<div id="app" class="hidden">
+  <div id="sidebar">
+    <div id="users"></div>
+  </div>
+
+  <div id="chat">
+    <div id="messages"></div>
+    <div id="inputBar">
+      <input id="msgInput">
+      <button onclick="sendMsg()">Send</button>
     </div>
-    <div id="chatArea">
-      <div id="messages"></div>
-      <footer>
-        <input id="msgInput" placeholder="Message...">
-        <button onclick="sendMessage()">Send</button>
-      </footer>
-    </div>
+  </div>
+
+  <button id="settingsBtn" onclick="toggleSettings()">⚙</button>
+
+  <div id="settingsPanel" class="hidden">
+    <h4>Admin Panel</h4>
+    <input id="newUser">
+    <input id="newPin">
+    <button onclick="addUser()">Add User</button>
   </div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, push, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// --- FIREBASE CONFIG ---
+/* 🔥 Firebase */
 const firebaseConfig = {
-  apiKey: "AlzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
+  apiKey: "AIzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
   authDomain: "galaxytalk-7d3bd.firebaseapp.com",
   databaseURL: "https://galaxytalk-7d3bd-default-rtdb.firebaseio.com",
-  projectId: "galaxytalk-7d3bd",
+  projectId: "galaxytalk-7d3bd"
 };
 
-const fb = initializeApp(firebaseConfig);
-const db = getDatabase(fb);
+const appFB = initializeApp(firebaseConfig);
+const db = getDatabase(appFB);
 
-// --- USERS ---
-let usersDB = {
-  "Faheemah": "9846",
-  "SamuelR": "5891",
-  "SamuelC": "2339",
-  "Ethan": "8213",
-  "Elnathan": "9999",
-  "Caroline": "4006",
-  "Molly": "2296",
-  "Zara": "6701",
-  "Danny": "7494",
-  "Shell-Lee": "0754",
-  "Raygan": "5124",
-  "Jacob": "7596",
-  "Nathan": "2006",
-  "Kiera": "4888",
-  "Karter": "1115",
-  "Meadleen": "5565",
-  "Eli": "0758",
-  "Hadlee": "9160"
-};
+/* 🔐 Password */
+const SITE_PASSWORD = "1886";
+
+/* Elements */
+const siteAccess = document.getElementById("siteAccess");
+const login = document.getElementById("login");
+const app = document.getElementById("app");
+
+const sitePass = document.getElementById("sitePass");
+const siteErr = document.getElementById("siteErr");
+
+const userInput = document.getElementById("userInput");
+const pinInput = document.getElementById("pinInput");
+const loginErr = document.getElementById("loginErr");
+
+const usersDiv = document.getElementById("users");
+const messagesDiv = document.getElementById("messages");
+const msgInput = document.getElementById("msgInput");
+
+const settingsPanel = document.getElementById("settingsPanel");
+const newUser = document.getElementById("newUser");
+const newPin = document.getElementById("newPin");
 
 let currentUser = null;
-let currentChat = 'global';
 
-// --- SITE ACCESS ---
-const SITE_PASSWORD = "1886";
-function checkSitePass() {
-  const val = document.getElementById('sitePass').value.trim();
-  const err = document.getElementById('siteError');
-  if(val === SITE_PASSWORD){
-    document.getElementById('siteAccess').style.display = 'none';
-    document.getElementById('login').style.display = 'flex';
-    err.style.display = 'none';
+/* ✅ Site Access */
+window.checkSite = () => {
+  if (sitePass.value.trim() === SITE_PASSWORD) {
+    siteAccess.classList.add("hidden");
+    login.classList.remove("hidden");
+    siteErr.textContent = "";
   } else {
-    err.textContent = "Wrong site password";
-    err.style.display = "block";
+    siteErr.textContent = "Incorrect site password";
   }
-}
+};
 
-// --- LOGIN ---
-function login() {
-  const u = document.getElementById('loginUser').value.trim();
-  const p = document.getElementById('loginPass').value.trim();
-  const err = document.getElementById('loginError');
-  if(usersDB[u] && usersDB[u] === p){
-    currentUser = u;
-    // Add user to Firebase if not exists
-    set(ref(db, 'users/' + currentUser), { name: currentUser });
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    renderSidebarUsers();
-    openGlobal();
-    err.style.display = 'none';
-  } else {
-    err.textContent = "Wrong username or PIN";
-    err.style.display = 'block';
+/* ✅ Login */
+window.loginUser = async () => {
+  const u = userInput.value.trim();
+  const p = pinInput.value.trim();
+  if (!u || !p) return;
+
+  const snap = await get(ref(db,"users/"+u));
+  if (!snap.exists() || snap.val().pin !== p) {
+    loginErr.textContent = "Invalid login";
+    return;
   }
-}
 
-// --- SIDEBAR ---
-function renderSidebarUsers(){
-  const list=document.getElementById('usersList');
-  list.innerHTML='';
-  Object.keys(usersDB).forEach(u=>{
-    if(u!==currentUser){
-      const div=document.createElement('div');
-      div.className='sidebarItem';
-      div.textContent=u;
-      div.onclick=()=>{
-        currentChat=[currentUser,u].sort().join('_');
-        setActiveChat(div);
-        listenMessages('dm/' + currentChat);
-      };
-      list.appendChild(div);
-    }
-  });
-  setActiveChat(currentChat==='global'?document.getElementById('globalChat'):null);
-}
+  currentUser = u;
+  login.classList.add("hidden");
+  app.classList.remove("hidden");
 
-function setActiveChat(el){
-  document.querySelectorAll('.sidebarItem').forEach(x=>x.classList.remove('active'));
-  document.getElementById('globalChat').classList.remove('active');
-  if(el) el.classList.add('active');
-}
+  const statusRef = ref(db,"status/"+u);
+  set(statusRef,true);
+  onDisconnect(statusRef).set(false);
 
-document.getElementById('globalChat').onclick=openGlobal;
+  loadUsers();
+  loadMessages();
+};
 
-function openGlobal(){
-  currentChat='global';
-  setActiveChat(document.getElementById('globalChat'));
-  listenMessages('global');
-}
+/* 👥 Users */
+function loadUsers(){
+  onValue(ref(db,"users"), snap=>{
+    usersDiv.innerHTML="";
+    snap.forEach(u=>{
+      const row=document.createElement("div");
+      row.className="user";
+      row.innerHTML=`<div class="dot" id="dot-${u.key}"></div>${u.key}`;
+      usersDiv.appendChild(row);
 
-// --- MESSAGES ---
-function listenMessages(path){
-  const messagesEl = document.getElementById('messages');
-  messagesEl.innerHTML='';
-  const messagesRef = ref(db, 'messages/' + path);
-  onValue(messagesRef, snap=>{
-    messagesEl.innerHTML='';
-    snap.forEach(m=>{
-      const d = document.createElement('div');
-      d.className='msg';
-      d.textContent=m.val().user + ': ' + m.val().text;
-      messagesEl.appendChild(d);
+      onValue(ref(db,"status/"+u.key), s=>{
+        const dot=document.getElementById("dot-"+u.key);
+        if(dot) dot.classList.toggle("online",s.val()===true);
+      });
     });
-    messagesEl.scrollTop = messagesEl.scrollHeight;
   });
 }
 
-window.sendMessage = ()=>{
-  const val = document.getElementById('msgInput').value.trim();
-  if(!val) return;
-  const path = currentChat==='global' ? 'global' : 'dm/' + currentChat;
-  push(ref(db, 'messages/' + path), { user: currentUser, text: val });
-  document.getElementById('msgInput').value='';
+/* 💬 Messages */
+function loadMessages(){
+  onValue(ref(db,"messages/global"), snap=>{
+    messagesDiv.innerHTML="";
+    snap.forEach(m=>{
+      const d=document.createElement("div");
+      d.className="msg"+(m.val().user===currentUser?" me":"");
+      d.textContent=`${m.val().user}: ${m.val().text}`;
+      messagesDiv.appendChild(d);
+    });
+    messagesDiv.scrollTop=messagesDiv.scrollHeight;
+  });
 }
+
+window.sendMsg = () => {
+  if (!msgInput.value.trim()) return;
+  push(ref(db,"messages/global"),{
+    user:currentUser,
+    text:msgInput.value
+  });
+  msgInput.value="";
+};
+
+/* ⚙ Admin */
+window.toggleSettings = () => {
+  if(currentUser!=="Elnathan") return;
+  settingsPanel.classList.toggle("hidden");
+};
+
+window.addUser = () => {
+  if(currentUser!=="Elnathan") return;
+  set(ref(db,"users/"+newUser.value),{
+    pin:newPin.value
+  });
+};
 </script>
 
-<!-- STARFIELD -->
-<script>
-const c=document.getElementById('space');
-const ctx=c.getContext('2d');
-function resize(){c.width=innerWidth;c.height=innerHeight;}
-window.onresize=resize; resize();
-let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
-(function anim(){
-  ctx.clearRect(0,0,c.width,c.height);
-  stars.forEach(s=>{
-    s.a += (Math.random()-0.5)*0.05;
-    s.a=Math.max(0,Math.min(1,s.a));
-    ctx.fillStyle=`rgba(255,255,255,${s.a})`;
-    ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fill();
-  });
-  requestAnimationFrame(anim);
-})();
-</script>
 </body>
 </html>
