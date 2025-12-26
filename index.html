@@ -6,13 +6,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 *{box-sizing:border-box;font-family:Arial,sans-serif}
-body{margin:0;background:#0b0f2a;color:#fff;height:100vh;overflow:hidden}
+body{margin:0;background:black;color:#fff;height:100vh;overflow:hidden}
 .hidden{display:none}
 .center{height:100vh;display:flex;align-items:center;justify-content:center}
-.card{background:#141a4f;padding:25px;border-radius:12px;width:320px}
+.card{background:rgba(60,0,90,0.85);padding:25px;border-radius:12px;width:320px;text-align:center}
 input,button{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:none}
 button{background:#6a5cff;color:#fff;cursor:pointer}
 .error{color:#ff6b6b;height:16px;font-size:14px}
+
+/* Canvas space background */
+canvas{position:fixed;inset:0;z-index:-1}
 
 /* App layout */
 #app{display:flex;height:100vh}
@@ -42,6 +45,8 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
 </style>
 </head>
 <body>
+
+<canvas id="space"></canvas>
 
 <!-- SITE ACCESS -->
 <div id="siteAccess" class="center">
@@ -117,7 +122,12 @@ const loginErr=document.getElementById("loginErr");
 
 async function checkSite(){
   const snap=await get(ref(db,"sitePassword"));
-  sitePassword = snap.exists()?snap.val():sitePassword;
+  // initialize if not exist
+  if(!snap.exists()){
+    await set(ref(db,"sitePassword"),"1886");
+    sitePassword="1886";
+  } else sitePassword = snap.val();
+
   if(sitePassEl.value === sitePassword){
     siteAccessEl.style.display="none";
     loginEl.style.display="flex";
@@ -186,14 +196,35 @@ window.addUser=()=>{
   set(ref(db,"users/"+newUser.value),{pin:newPin.value});
 };
 
-window.changeSitePass=()=>{
+window.changeSitePass=async()=>{
   if(currentUser!=="Elnathan")return;
   const newPass=newSitePass.value.trim();
   if(!newPass)return;
-  set(ref(db,"sitePassword"),newPass);
+  await set(ref(db,"sitePassword"),newPass);
   alert("Site password updated!");
   newSitePass.value="";
 };
+</script>
+
+<script>
+// Space background
+const c=document.getElementById('space');
+const ctx=c.getContext('2d');
+function resize(){ c.width=innerWidth; c.height=innerHeight }
+window.onresize=resize; resize();
+let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
+(function anim(){
+  ctx.clearRect(0,0,c.width,c.height);
+  stars.forEach(s=>{
+    s.a+=(Math.random()-.5)*.05;
+    s.a=Math.max(0,Math.min(1,s.a));
+    ctx.fillStyle=`rgba(255,255,255,${s.a})`;
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  });
+  requestAnimationFrame(anim);
+})();
 </script>
 
 </body>
