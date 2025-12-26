@@ -2,253 +2,207 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GalaxyTalk</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<title>GalaxyTalk</title>
+<script src="https://kit.fontawesome.com/c0477c40ad.js" crossorigin="anonymous"></script>
 <style>
-*{box-sizing:border-box;font-family:Arial,sans-serif}
-body{margin:0;background:black;color:white;overflow:hidden}
-.hidden{display:none}
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
+body { margin:0; background:black; color:#eee; overflow:hidden; }
 
-/* Space background */
-canvas{position:fixed;inset:0;z-index:-1}
+/* Site Access & Login */
+#siteAccess, #login { height:100vh; display:flex; align-items:center; justify-content:center; }
+.box { background: rgba(60,0,90,0.85); padding:25px; border-radius:12px; width:360px; text-align:center; }
+input { width:100%; padding:10px; margin-top:10px; border-radius:8px; border:none; }
+button { cursor:pointer; background:black; color:white; border:1px solid purple; padding:10px; border-radius:8px; }
+button:hover { background:purple; }
+.error { color:#ff6b6b; font-size:14px; display:none; margin-top:5px; }
 
-/* Center cards */
-.center{height:100vh;display:flex;align-items:center;justify-content:center}
-.card{background:rgba(80,0,120,.85);padding:25px;border-radius:12px;width:320px;box-shadow:0 0 30px purple}
-input,button{width:100%;padding:10px;margin-top:10px;border-radius:8px;border:none}
-button{background:black;color:white;border:1px solid purple;cursor:pointer}
-button:hover{background:purple}
+/* Chat Layout */
+#app { display:none; height:100vh; flex-direction:row; }
+#sidebar { width:260px; background:#120018; padding:10px; display:flex; flex-direction:column; }
+#users { flex:1; overflow-y:auto; }
+.user { padding:10px; border-bottom:1px solid #222; display:flex; align-items:center; gap:8px; cursor:pointer; }
+.dotStatus { width:8px; height:8px; border-radius:50%; }
+.online { background:#4cff4c; }
+.offline { background:#777; }
+#chatArea { flex:1; display:flex; flex-direction:column; }
+#messages { flex:1; padding:10px; overflow-y:auto; }
+.msg { margin-bottom:6px; }
+.me { color:#7aa2ff; }
+#typingIndicator { height:18px; font-style:italic; color:#bbb; display:flex; align-items:center; }
+.dot { opacity:0; animation:blink 1.4s infinite both; }
+.dot:nth-child(2){animation-delay:0s} .dot:nth-child(3){animation-delay:.2s} .dot:nth-child(4){animation-delay:.4s}
+@keyframes blink{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+#inputBar { display:flex; gap:8px; padding:10px; background:#0f1440; }
+#msgInput { flex:1; padding:14px; font-size:15px; border-radius:6px; border:none; }
+#sendBtn { width:46px; display:flex; align-items:center; justify-content:center; border-radius:6px; }
 
-/* Layout */
-#app{display:flex;height:100vh}
-#sidebar{width:260px;background:#120018;padding:10px;overflow-y:auto}
-.user{display:flex;align-items:center;gap:8px;padding:6px;border-radius:6px;cursor:pointer}
-.user:hover{background:rgba(255,255,255,.1)}
-.dot{width:8px;height:8px;border-radius:50%}
-.online{background:#3cff3c}
-.offline{background:#777}
+/* Settings Button & Overlay */
+#settingsBtn { position:fixed; bottom:15px; left:15px; width:42px; height:42px; border-radius:50%; background:#6a5cff; color:#fff; border:none; font-size:20px; }
+#settingsOverlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:999; display:none; }
+#settingsContainer { width:90%; height:90%; margin:auto; background:#0e0e10; display:flex; border-radius:10px; overflow:hidden; }
+#settingsSidebar { width:240px; background:#1e1f22; padding:10px; display:flex; flex-direction:column; gap:6px; }
+#settingsSidebar h4 { color:#b5bac1; margin-bottom:10px; }
+.tabBtn { background:none; border:none; color:#dbdee1; padding:10px; border-radius:6px; text-align:left; display:flex; gap:10px; align-items:center; cursor:pointer; }
+.tabBtn:hover, .tabBtn.active { background:#2b2d31; }
+.closeBtn { margin-top:auto; background:#ed4245; }
+#settingsContent { flex:1; padding:25px; overflow-y:auto; }
+.settingsTab { display:none; }
+.settingsTab.active { display:block; }
 
-#chat{flex:1;display:flex;flex-direction:column}
-#messages{flex:1;padding:10px;overflow-y:auto}
-.msg{margin-bottom:6px;padding:6px;border-radius:6px;background:rgba(150,0,200,.35)}
-.me{border:1px solid #7aa2ff}
-
-/* Typing */
-#typing{height:20px;font-style:italic;color:#bbb}
-
-/* Input */
-#inputBar{display:flex;gap:6px;padding:10px}
-#msg{flex:1;padding:12px}
-#send{width:80px}
-
-/* Settings */
-#settingsBtn{position:fixed;bottom:15px;left:15px;width:44px;height:44px;border-radius:50%;font-size:18px}
-#settings{position:fixed;inset:0;background:#0b0014;display:flex}
-#settingsSidebar{width:200px;background:#14001f;padding:10px}
-#settingsMain{flex:1;padding:20px}
-.tab{display:none}
-.tab.active{display:block}
 </style>
 </head>
 <body>
 
-<canvas id="space"></canvas>
-
 <!-- SITE ACCESS -->
-<div id="access" class="center">
-  <div class="card">
+<div id="siteAccess">
+  <div class="box">
     <h2>GalaxyTalk</h2>
-    <input id="sitePass" type="password" placeholder="Site password">
-    <button onclick="checkSite()">Enter</button>
+    <input id="sitePass" type="password" placeholder="Enter site password">
+    <div id="siteError" class="error"></div>
+    <button onclick="checkSitePass()">Enter</button>
   </div>
 </div>
 
 <!-- LOGIN -->
-<div id="login" class="center hidden">
-  <div class="card">
+<div id="login" style="display:none">
+  <div class="box">
     <h3>Login</h3>
-    <input id="username" placeholder="Username">
-    <input id="pin" type="password" inputmode="numeric" placeholder="4-digit PIN">
-    <div id="loginErr" style="color:#ff6b6b"></div>
-    <button onclick="login()">Login</button>
+    <input id="userInput" placeholder="Username">
+    <input id="pinInput" type="password" placeholder="4-digit PIN">
+    <div id="loginError" class="error"></div>
+    <button onclick="loginUser()">Login</button>
   </div>
 </div>
 
-<!-- APP -->
-<div id="app" class="hidden">
-  <div id="sidebar"></div>
-
-  <div id="chat">
+<!-- CHAT APP -->
+<div id="app">
+  <div id="sidebar">
+    <div id="users"></div>
+  </div>
+  <div id="chatArea">
     <div id="messages"></div>
-    <div id="typing"></div>
+    <div id="typingIndicator"><span id="typingText"></span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
     <div id="inputBar">
-      <input id="msg" placeholder="Message">
-      <button id="send" onclick="send()">Send</button>
+      <input id="msgInput" placeholder="Message">
+      <button id="sendBtn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
   </div>
-
-  <button id="settingsBtn" onclick="openSettings()">⚙</button>
+  <button id="settingsBtn" onclick="openSettings()"><i class="fa-solid fa-gear"></i></button>
 </div>
 
-<!-- SETTINGS -->
-<div id="settings" class="hidden">
-  <div id="settingsSidebar">
-    <button onclick="openTab('account')">Account</button>
-    <button onclick="openTab('notifications')">Notifications</button>
-    <button onclick="closeSettings()">Close</button>
-  </div>
-  <div id="settingsMain">
-    <div id="account" class="tab active">
-      <h3>Account</h3>
-      <p id="who"></p>
-      <button onclick="logout()">Log out</button>
+<!-- SETTINGS OVERLAY -->
+<div id="settingsOverlay">
+  <div id="settingsContainer">
+    <div id="settingsSidebar">
+      <h4>User Settings</h4>
+      <button onclick="openTab('account')" class="tabBtn active"><i class="fa-solid fa-circle-user"></i> My Account</button>
+      <button onclick="openTab('security')" class="tabBtn"><i class="fa-regular fa-camera-cctv"></i> Security</button>
+      <button onclick="openTab('appearance')" class="tabBtn"><i class="fa-solid fa-palette"></i> Appearance</button>
+      <button onclick="openTab('admin')" class="tabBtn adminOnly"><i class="fa-solid fa-screwdriver-wrench"></i> Admin</button>
+      <button onclick="closeSettings()" class="closeBtn">Close</button>
     </div>
-    <div id="notifications" class="tab">
-      <h3>Notifications</h3>
-      <button onclick="enableNotifications()">Enable</button>
+    <div id="settingsContent">
+      <div id="account" class="settingsTab active">
+        <h2>My Account</h2>
+        <p><b>Username:</b> <span id="whoami"></span></p>
+      </div>
+      <div id="security" class="settingsTab"><h2>Security</h2><p>Change password & security settings here.</p></div>
+      <div id="appearance" class="settingsTab"><h2>Appearance</h2><p>Theme customization here.</p></div>
+      <div id="admin" class="settingsTab"><h2>Admin Panel</h2><p>Admin-only tools.</p></div>
     </div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getDatabase, ref, push, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
-/* FIREBASE */
+/* --- FIREBASE CONFIG --- */
 const firebaseConfig = {
   apiKey: "AIzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
   authDomain: "galaxytalk-7d3bd.firebaseapp.com",
   databaseURL: "https://galaxytalk-7d3bd-default-rtdb.firebaseio.com",
   projectId: "galaxytalk-7d3bd"
 };
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const fb = initializeApp(firebaseConfig);
+const db = getDatabase(fb);
 
-/* PASSWORDS */
+/* --- SITE ACCESS --- */
 const SITE_PASSWORD = "1886";
-const USERS={
-"Faheemah":"9846","SamuelR":"5891","SamuelC":"2339","Ethan":"8213",
-"Elnathan":"9999","Caroline":"4006","Molly":"2296","Zara":"6701",
-"Danny":"7494","Shell-Lee":"0754","Raygan":"5124","Jacob":"7596",
-"Nathan":"2006","Kiera":"4888","Karter":"1115","Meadleen":"5565",
-"Eli":"0758","Hadlee":"9160"
-};
-
-let me=null;
-let chat="global";
-
-/* SITE ACCESS */
-window.checkSite=function(){
-  if(sitePass.value.trim()===SITE_PASSWORD){
-    access.classList.add("hidden");
-    login.classList.remove("hidden");
-  }else alert("Wrong site password");
-};
-
-/* LOGIN */
-window.login=function(){
-  const u=username.value.trim();
-  const p=pin.value.trim();
-  if(!USERS[u]||USERS[u]!==p){
-    loginErr.textContent="Invalid login";
-    return;
+function checkSitePass() {
+  const val = document.getElementById('sitePass').value.trim();
+  const err = document.getElementById('siteError');
+  if(val === SITE_PASSWORD){
+    document.getElementById('siteAccess').style.display = 'none';
+    document.getElementById('login').style.display = 'flex';
+    err.style.display = 'none';
+  } else {
+    err.textContent = "Wrong site password";
+    err.style.display = "block";
   }
-  me=u;
-  login.classList.add("hidden");
-  app.classList.remove("hidden");
-  who.textContent="Logged in as "+u;
+}
 
-  set(ref(db,"status/"+u),true);
-  onDisconnect(ref(db,"status/"+u)).set(false);
-
-  loadUsers();
-  listen();
+/* --- USERS --- */
+const USERS = {
+  "Faheemah":"9846","SamuelR":"5891","SamuelC":"2339","Ethan":"8213",
+  "Elnathan":"9999","Caroline":"4006","Molly":"2296","Zara":"6701",
+  "Danny":"7494","Shell-Lee":"0754","Raygan":"5124","Jacob":"7596",
+  "Nathan":"2006","Kiera":"4888","Karter":"1115","Meadleen":"5565",
+  "Eli":"0758","Hadlee":"9160"
 };
 
-/* USERS */
-function loadUsers(){
-  onValue(ref(db,"status"),snap=>{
-    sidebar.innerHTML="<h3>DMs</h3>";
-    snap.forEach(s=>{
-      if(s.key!==me){
-        const d=document.createElement("div");
-        d.className="user";
-        d.innerHTML=`<div class="dot ${s.val()?'online':'offline'}"></div>${s.key}`;
-        d.onclick=()=>openDM(s.key);
-        sidebar.appendChild(d);
-      }
-    });
-  });
+let currentUser = null;
+let currentChat = "global";
+
+/* --- LOGIN --- */
+function loginUser() {
+  const u = document.getElementById('userInput').value.trim();
+  const p = document.getElementById('pinInput').value.trim();
+  const err = document.getElementById('loginError');
+  if(!u || !p){ err.textContent="Enter username & PIN"; err.style.display="block"; return; }
+  if(USERS[u] && USERS[u] === p){
+    currentUser = u;
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('whoami').textContent = currentUser;
+    err.style.display="none";
+    loadMessages();
+  } else { err.textContent="Invalid username or PIN"; err.style.display="block"; }
 }
 
-/* DMS */
-function openDM(u){
-  chat=[me,u].sort().join("_");
-  listen();
+/* --- SETTINGS --- */
+function openSettings(){ document.getElementById('settingsOverlay').style.display='flex'; }
+function closeSettings(){ document.getElementById('settingsOverlay').style.display='none'; }
+function openTab(name){
+  document.querySelectorAll('.settingsTab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  event.currentTarget.classList.add('active');
 }
 
-/* MESSAGES */
-function listen(){
-  messages.innerHTML="";
-  onValue(ref(db,"messages/"+chat),snap=>{
-    messages.innerHTML="";
+/* --- FIREBASE CHAT --- */
+const messagesEl = document.getElementById('messages');
+const msgInputEl = document.getElementById('msgInput');
+
+function loadMessages(){
+  onValue(ref(db,"messages/global"),snap=>{
+    messagesEl.innerHTML="";
     snap.forEach(m=>{
-      const d=document.createElement("div");
-      d.className="msg"+(m.val().user===me?" me":"");
-      d.textContent=m.val().user+": "+m.val().text;
-      if(m.val().user===me){
-        d.ondblclick=()=>{
-          const t=prompt("Edit message",m.val().text);
-          if(t)set(ref(db,"messages/"+chat+"/"+m.key+"/text"),t);
-        };
-      }
-      messages.appendChild(d);
+      const div=document.createElement('div');
+      div.className="msg"+(m.val().user===currentUser?" me":"");
+      div.textContent = `${m.val().user}: ${m.val().text}`;
+      messagesEl.appendChild(div);
     });
-    messages.scrollTop=messages.scrollHeight;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
   });
 }
 
-/* SEND */
-window.send=function(){
-  if(!msg.value)return;
-  push(ref(db,"messages/"+chat),{user:me,text:msg.value});
-  msg.value="";
-};
-
-/* SETTINGS */
-window.openSettings=()=>settings.classList.remove("hidden");
-window.closeSettings=()=>settings.classList.add("hidden");
-window.openTab=name=>{
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.getElementById(name).classList.add("active");
-};
-window.logout=()=>location.reload();
-
-/* NOTIFICATIONS */
-window.enableNotifications=async()=>{
-  const p=await Notification.requestPermission();
-  if(p==="granted")new Notification("GalaxyTalk enabled");
-};
+function sendMessage(){
+  if(!msgInputEl.value.trim()) return;
+  push(ref(db,"messages/global"),{user:currentUser,text:msgInputEl.value});
+  msgInputEl.value="";
+}
 </script>
-
-<script>
-/* SPACE BACKGROUND */
-const c=document.getElementById("space"),x=c.getContext("2d");
-function resize(){c.width=innerWidth;c.height=innerHeight}
-window.onresize=resize;resize();
-let stars=[...Array(200)].map(()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
-(function anim(){
-  x.clearRect(0,0,c.width,c.height);
-  stars.forEach(s=>{
-    s.a+= (Math.random()-.5)*.05;
-    s.a=Math.max(0,Math.min(1,s.a));
-    x.fillStyle=`rgba(255,255,255,${s.a})`;
-    x.beginPath();x.arc(s.x,s.y,s.r,0,Math.PI*2);x.fill();
-  });
-  requestAnimationFrame(anim);
-})();
-</script>
-
 </body>
 </html>
