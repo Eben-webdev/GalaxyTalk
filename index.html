@@ -157,20 +157,21 @@ input{
 <script>
 const SITE_PASSWORD = "1886";
 
-function checkSite() {
-  const input = document.getElementById("sitePass").value.trim();
-  const err = document.getElementById("siteErr");
+const siteAccessEl = document.getElementById("siteAccess");
+const loginEl = document.getElementById("login");
+const sitePassEl = document.getElementById("sitePass");
+const siteErrEl = document.getElementById("siteErr");
 
-  if (input === SITE_PASSWORD) {
-    document.getElementById("siteAccess").classList.add("hidden");
-    document.getElementById("login").classList.remove("hidden");
-    err.textContent = "";
+window.checkSite = () => {
+  if (sitePassEl.value === SITE_PASSWORD) {
+    siteAccessEl.style.display = "none";
+    loginEl.style.display = "flex";
+    siteErrEl.textContent = "";
   } else {
-    err.textContent = "Incorrect site password";
+    siteErrEl.textContent = "Incorrect site password";
   }
-}
+};
 </script>
-
 
 </body>
 </html>
