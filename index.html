@@ -4,13 +4,10 @@
 <meta charset="UTF-8">
 <title>GalaxyTalk</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 *{box-sizing:border-box;font-family:Arial,sans-serif}
 body{margin:0;background:#0b0f2a;color:#fff;height:100vh;overflow:hidden}
 .hidden{display:none}
-
-/* Access + Login */
 .center{height:100vh;display:flex;align-items:center;justify-content:center}
 .card{background:#141a4f;padding:25px;border-radius:12px;width:320px}
 input,button{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:none}
@@ -31,13 +28,11 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
 #messages{flex:1;padding:10px;overflow-y:auto}
 .msg{margin-bottom:6px}
 .me{color:#7aa2ff}
-
 #typing{height:20px;font-style:italic;color:#aaa}
 .dot{animation:blink 1.4s infinite both}
 .dot:nth-child(2){animation-delay:.2s}
 .dot:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
-
 #inputBar{display:flex;gap:6px;padding:10px;background:#0f1440}
 #msgInput{flex:1}
 
@@ -46,14 +41,13 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
 #settings{position:absolute;bottom:60px;left:12px;background:#141a4f;padding:15px;border-radius:10px;width:220px}
 </style>
 </head>
-
 <body>
 
-<!-- ACCESS -->
+<!-- SITE ACCESS -->
 <div id="siteAccess" class="center">
   <div class="card">
     <h2>GalaxyTalk</h2>
-    <input id="sitePass" type="password" placeholder="Access password">
+    <input id="sitePass" type="password" placeholder="Site access password">
     <div id="siteErr" class="error"></div>
     <button onclick="checkSite()">Enter</button>
   </div>
@@ -75,7 +69,6 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
   <div id="sidebar">
     <div id="users"></div>
   </div>
-
   <div id="chat">
     <div id="messages"></div>
     <div id="typing"><span id="typingText"></span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
@@ -84,41 +77,21 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
       <button onclick="sendMsg()">Send</button>
     </div>
   </div>
-
   <button id="settingsBtn" onclick="toggleSettings()">⚙</button>
-
   <div id="settings" class="hidden">
     <div id="adminPanel" class="hidden">
       <h4>Admin</h4>
       <input id="newUser" placeholder="Username">
       <input id="newPin" placeholder="PIN">
       <button onclick="addUser()">Add</button>
+      <hr>
+      <input id="newSitePass" placeholder="New site password">
+      <button onclick="changeSitePass()">Change Site Password</button>
     </div>
     <button onclick="logout()">Logout</button>
   </div>
 </div>
 
-<!-- PASSWORD LOGIC (DO NOT TOUCH) -->
-<script>
-const SITE_PASSWORD = "1886";
-
-const siteAccessEl = document.getElementById("siteAccess");
-const loginEl = document.getElementById("login");
-const sitePassEl = document.getElementById("sitePass");
-const siteErrEl = document.getElementById("siteErr");
-
-function checkSite(){
-  if(sitePassEl.value === SITE_PASSWORD){
-    siteAccessEl.style.display="none";
-    loginEl.style.display="flex";
-    siteErrEl.textContent="";
-  }else{
-    siteErrEl.textContent="Incorrect site password";
-  }
-}
-</script>
-
-<!-- FIREBASE + APP -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import { getDatabase, ref, set, get, push, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
@@ -134,6 +107,23 @@ const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
 let currentUser=null;
+let sitePassword="1886"; // default
+
+const siteAccessEl=document.getElementById("siteAccess");
+const loginEl=document.getElementById("login");
+const sitePassEl=document.getElementById("sitePass");
+const siteErrEl=document.getElementById("siteErr");
+const loginErr=document.getElementById("loginErr");
+
+async function checkSite(){
+  const snap=await get(ref(db,"sitePassword"));
+  sitePassword = snap.exists()?snap.val():sitePassword;
+  if(sitePassEl.value === sitePassword){
+    siteAccessEl.style.display="none";
+    loginEl.style.display="flex";
+    siteErrEl.textContent="";
+  }else siteErrEl.textContent="Incorrect site password";
+}
 
 window.login=async()=>{
   const u=username.value.trim();
@@ -194,6 +184,15 @@ window.logout=()=>location.reload();
 window.addUser=()=>{
   if(currentUser!=="Elnathan")return;
   set(ref(db,"users/"+newUser.value),{pin:newPin.value});
+};
+
+window.changeSitePass=()=>{
+  if(currentUser!=="Elnathan")return;
+  const newPass=newSitePass.value.trim();
+  if(!newPass)return;
+  set(ref(db,"sitePassword"),newPass);
+  alert("Site password updated!");
+  newSitePass.value="";
 };
 </script>
 
