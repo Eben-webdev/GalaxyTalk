@@ -13,11 +13,7 @@ body{margin:0;background:black;color:#fff;height:100vh;overflow:hidden}
 input,button{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:none}
 button{background:#6a5cff;color:#fff;cursor:pointer}
 .error{color:#ff6b6b;height:16px;font-size:14px}
-
-/* Canvas space background */
 canvas{position:fixed;inset:0;z-index:-1}
-
-/* App layout */
 #app{display:flex;height:100vh}
 #sidebar{width:260px;background:#0f1440;display:flex;flex-direction:column}
 #users{flex:1;overflow-y:auto}
@@ -25,8 +21,6 @@ canvas{position:fixed;inset:0;z-index:-1}
 .status{width:8px;height:8px;border-radius:50%}
 .online{background:#4cff4c}
 .offline{background:#777}
-
-/* Chat */
 #chat{flex:1;display:flex;flex-direction:column}
 #messages{flex:1;padding:10px;overflow-y:auto}
 .msg{margin-bottom:6px}
@@ -38,8 +32,6 @@ canvas{position:fixed;inset:0;z-index:-1}
 @keyframes blink{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
 #inputBar{display:flex;gap:6px;padding:10px;background:#0f1440}
 #msgInput{flex:1}
-
-/* Settings */
 #settingsBtn{position:absolute;bottom:12px;left:12px;width:42px;height:42px;border-radius:50%;background:#6a5cff;color:#fff}
 #settings{position:absolute;bottom:60px;left:12px;background:#141a4f;padding:15px;border-radius:10px;width:220px}
 </style>
@@ -89,9 +81,6 @@ canvas{position:fixed;inset:0;z-index:-1}
       <input id="newUser" placeholder="Username">
       <input id="newPin" placeholder="PIN">
       <button onclick="addUser()">Add</button>
-      <hr>
-      <input id="newSitePass" placeholder="New site password">
-      <button onclick="changeSitePass()">Change Site Password</button>
     </div>
     <button onclick="logout()">Logout</button>
   </div>
@@ -99,76 +88,81 @@ canvas{position:fixed;inset:0;z-index:-1}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getDatabase, ref, set, get, push, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
+// Firebase config
 const firebaseConfig={
   apiKey:"AIzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
   authDomain:"galaxytalk-7d3bd.firebaseapp.com",
   databaseURL:"https://galaxytalk-7d3bd-default-rtdb.firebaseio.com",
   projectId:"galaxytalk-7d3bd"
 };
-
 const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
+/* USERS */
+const USERS = {
+  "Faheemah":"9846","SamuelR":"5891","SamuelC":"2339","Ethan":"8213",
+  "Elnathan":"9999","Caroline":"4006","Molly":"2296","Zara":"6701",
+  "Danny":"7494","Shell-Lee":"0754","Raygan":"5124","Jacob":"7596",
+  "Nathan":"2006","Kiera":"4888","Karter":"1115","Meadleen":"5565",
+  "Eli":"0758","Hadlee":"9160"
+};
+
 let currentUser=null;
-let sitePassword="1886"; // default
+const SITE_PASSWORD="1886";
 
 const siteAccessEl=document.getElementById("siteAccess");
 const loginEl=document.getElementById("login");
 const sitePassEl=document.getElementById("sitePass");
 const siteErrEl=document.getElementById("siteErr");
 const loginErr=document.getElementById("loginErr");
+const adminPanel=document.getElementById("adminPanel");
 
-async function checkSite(){
-  const snap=await get(ref(db,"sitePassword"));
-  // initialize if not exist
-  if(!snap.exists()){
-    await set(ref(db,"sitePassword"),"1886");
-    sitePassword="1886";
-  } else sitePassword = snap.val();
-
-  if(sitePassEl.value === sitePassword){
+// SITE ACCESS
+window.checkSite = () => {
+  if(sitePassEl.value === SITE_PASSWORD){
     siteAccessEl.style.display="none";
     loginEl.style.display="flex";
     siteErrEl.textContent="";
-  }else siteErrEl.textContent="Incorrect site password";
+  } else siteErrEl.textContent="Incorrect site password";
 }
 
-window.login=async()=>{
+// LOGIN
+window.login = () => {
   const u=username.value.trim();
   const p=pin.value.trim();
-  const snap=await get(ref(db,"users/"+u));
-  if(!snap.exists()||snap.val().pin!==p){
+  if(!u||!p) return;
+
+  if(!USERS[u] || USERS[u] !== p){
     loginErr.textContent="Invalid login";
     return;
   }
+
   currentUser=u;
   loginEl.style.display="none";
   document.getElementById("app").style.display="flex";
 
   if(u==="Elnathan") adminPanel.classList.remove("hidden");
 
-  const sRef=ref(db,"status/"+u);
-  set(sRef,true);
-  onDisconnect(sRef).set(false);
-
   loadUsers();
   listenMessages();
-};
+}
 
+// LOAD USERS
 function loadUsers(){
-  onValue(ref(db,"status"),snap=>{
+  onValue(ref(db,"users"),snap=>{
     users.innerHTML="";
-    snap.forEach(u=>{
+    Object.keys(USERS).forEach(u=>{
       const d=document.createElement("div");
       d.className="user";
-      d.innerHTML=`<div class="status ${u.val()?'online':'offline'}"></div>${u.key}`;
+      d.innerHTML=`<div class="status offline"></div>${u}`;
       users.appendChild(d);
     });
   });
 }
 
+// MESSAGES
 function listenMessages(){
   onValue(ref(db,"messages/global"),snap=>{
     messages.innerHTML="";
@@ -182,35 +176,27 @@ function listenMessages(){
   });
 }
 
-window.sendMsg=()=>{
-  if(!msgInput.value.trim())return;
+// SEND MESSAGE
+window.sendMsg = ()=>{
+  if(!msgInput.value.trim()) return;
   push(ref(db,"messages/global"),{user:currentUser,text:msgInput.value});
   msgInput.value="";
-};
+}
 
-window.toggleSettings=()=>settings.classList.toggle("hidden");
-window.logout=()=>location.reload();
-
-window.addUser=()=>{
-  if(currentUser!=="Elnathan")return;
-  set(ref(db,"users/"+newUser.value),{pin:newPin.value});
-};
-
-window.changeSitePass=async()=>{
-  if(currentUser!=="Elnathan")return;
-  const newPass=newSitePass.value.trim();
-  if(!newPass)return;
-  await set(ref(db,"sitePassword"),newPass);
-  alert("Site password updated!");
-  newSitePass.value="";
+// SETTINGS
+window.toggleSettings = ()=>settings.classList.toggle("hidden");
+window.logout = ()=>location.reload();
+window.addUser = ()=>{
+  if(currentUser!=="Elnathan") return;
+  USERS[newUser.value]=newPin.value;
 };
 </script>
 
 <script>
-// Space background
+// Space background animation
 const c=document.getElementById('space');
 const ctx=c.getContext('2d');
-function resize(){ c.width=innerWidth; c.height=innerHeight }
+function resize(){c.width=innerWidth;c.height=innerHeight;}
 window.onresize=resize; resize();
 let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
 (function anim(){
@@ -226,6 +212,5 @@ let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*
   requestAnimationFrame(anim);
 })();
 </script>
-
 </body>
 </html>
