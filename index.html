@@ -4,58 +4,110 @@
 <meta charset="UTF-8">
 <title>GalaxyTalk</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-*{box-sizing:border-box;font-family:Arial,sans-serif;margin:0;padding:0}
-body{height:100vh;background:black;color:#fff;overflow:hidden}
+*{box-sizing:border-box;font-family:Arial,sans-serif}
+body{margin:0;background:black;color:#eee;height:100vh;overflow:hidden}
 canvas{position:fixed;inset:0;z-index:-1}
 
-/* General hidden */
 .hidden{display:none}
+.error{color:#ff6b6b;font-size:14px;height:16px}
 
-/* Login & site access */
+/* CENTER CARDS */
 .center{height:100vh;display:flex;align-items:center;justify-content:center}
-.card{background:rgba(60,0,90,0.85);padding:25px;border-radius:12px;width:320px;text-align:center}
-input,button{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:none}
-button{background:#6a5cff;color:#fff;cursor:pointer}
-.error{color:#ff6b6b;height:16px;font-size:14px}
+.card{
+  background:rgba(60,0,90,.85);
+  padding:25px;
+  border-radius:12px;
+  width:320px;
+  box-shadow:0 0 25px purple;
+  text-align:center
+}
+input,button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  border-radius:6px;
+  border:none
+}
+button{background:black;color:white;border:1px solid purple;cursor:pointer}
+button:hover{background:purple}
 
-/* Layout */
+/* APP */
 #app{display:flex;height:100vh}
-#sidebar{width:260px;background:#0f1440;display:flex;flex-direction:column}
-#users{flex:1;overflow-y:auto}
-.user{padding:10px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;cursor:pointer}
-.status{width:10px;height:10px;border-radius:50%}
+#sidebar{
+  width:260px;
+  background:#120018;
+  display:flex;
+  flex-direction:column
+}
+.user{
+  padding:10px;
+  border-bottom:1px solid #222;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer
+}
+.status{width:8px;height:8px;border-radius:50%}
 .online{background:#4cff4c}
-.offline{background:#777}
+.offline{background:#666}
 
-/* Chat */
 #chat{flex:1;display:flex;flex-direction:column}
 #messages{flex:1;padding:10px;overflow-y:auto}
-.msg{margin-bottom:6px}
-.me{color:#7aa2ff}
+.msg{background:rgba(128,0,128,.35);padding:6px;border-radius:6px;margin-bottom:6px}
+.me{border:1px solid #7aa2ff}
 
-/* Typing */
 #typing{height:20px;font-style:italic;color:#aaa}
-.dot{animation:blink 1.4s infinite both;margin:0 1px}
+.dot{animation:blink 1.4s infinite both}
 .dot:nth-child(2){animation-delay:.2s}
 .dot:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
 
-/* Input bar */
-#inputBar{display:flex;gap:6px;padding:10px;background:#0f1440}
-#msgInput{flex:1;padding:12px;border-radius:6px;border:none;font-size:14px}
-#sendBtn{width:60px;padding:0 10px;font-size:14px}
+#inputBar{display:flex;gap:6px;padding:10px}
+#msgInput{flex:1;padding:14px;border-radius:6px;border:none}
+#sendBtn{width:60px}
 
-/* Settings */
-#settingsBtn{position:absolute;bottom:12px;left:12px;width:42px;height:42px;border-radius:50%;background:#6a5cff;color:#fff;font-size:18px}
-#settings{position:absolute;bottom:60px;left:12px;background:#141a4f;padding:15px;border-radius:10px;width:220px}
+/* SETTINGS */
+#settingsBtn{
+  position:absolute;
+  bottom:12px;
+  left:12px;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:purple;
+  color:white;
+  font-size:18px
+}
+#settingsOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  z-index:50
+}
+#settingsPanel{
+  position:fixed;
+  top:0;
+  right:-320px;
+  width:320px;
+  height:100%;
+  background:#1e1f2b;
+  padding:20px;
+  transition:.3s;
+  z-index:51
+}
+#settingsPanel.open{right:0}
+.closeBtn{position:absolute;top:10px;right:10px;cursor:pointer}
 </style>
 </head>
+
 <body>
 
 <canvas id="space"></canvas>
 
-<!-- Site Access -->
+<!-- SITE ACCESS -->
 <div id="siteAccess" class="center">
   <div class="card">
     <h2>GalaxyTalk</h2>
@@ -65,7 +117,7 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
   </div>
 </div>
 
-<!-- Login -->
+<!-- LOGIN -->
 <div id="login" class="center hidden">
   <div class="card">
     <h3>Login</h3>
@@ -76,14 +128,16 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
   </div>
 </div>
 
-<!-- App -->
+<!-- APP -->
 <div id="app" class="hidden">
-  <div id="sidebar">
-    <div id="users"></div>
-  </div>
+  <div id="sidebar"></div>
+
   <div id="chat">
     <div id="messages"></div>
-    <div id="typing"><span id="typingText"></span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+    <div id="typing">
+      <span id="typingText"></span>
+      <span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>
+    </div>
     <div id="inputBar">
       <input id="msgInput" placeholder="Message">
       <button id="sendBtn" onclick="sendMsg()">Send</button>
@@ -91,30 +145,25 @@ button{background:#6a5cff;color:#fff;cursor:pointer}
   </div>
 
   <button id="settingsBtn" onclick="toggleSettings()">⚙</button>
-  <div id="settings" class="hidden">
-    <div id="adminPanel" class="hidden">
-      <h4>Admin Panel</h4>
-      <input id="newUser" placeholder="Username">
-      <input id="newPin" placeholder="PIN">
-      <button onclick="addUser()">Add</button>
-    </div>
-    <button onclick="logout()">Logout</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="settingsOverlay" onclick="toggleSettings()"></div>
+<div id="settingsPanel">
+  <div class="closeBtn" onclick="toggleSettings()">✖</div>
+  <h3>Settings</h3>
+  <button onclick="logout()">Logout</button>
+  <div id="adminPanel" class="hidden">
+    <h4>Admin</h4>
+    <input id="newUser" placeholder="Username">
+    <input id="newPin" placeholder="PIN">
+    <button onclick="addUser()">Add User</button>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getDatabase, ref, push, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
-
-// Firebase config
-const firebaseConfig={
-  apiKey:"AIzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
-  authDomain:"galaxytalk-7d3bd.firebaseapp.com",
-  databaseURL:"https://galaxytalk-7d3bd-default-rtdb.firebaseio.com",
-  projectId:"galaxytalk-7d3bd"
-};
-const app=initializeApp(firebaseConfig);
-const db=getDatabase(app);
+import { getDatabase, ref, push, onValue, set, onDisconnect, remove } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
 /* USERS */
 const USERS={
@@ -126,39 +175,39 @@ const USERS={
 };
 
 const SITE_PASSWORD="1886";
+
+const firebaseConfig={
+  apiKey:"AIzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
+  authDomain:"galaxytalk-7d3bd.firebaseapp.com",
+  databaseURL:"https://galaxytalk-7d3bd-default-rtdb.firebaseio.com",
+  projectId:"galaxytalk-7d3bd"
+};
+
+const appFB=initializeApp(firebaseConfig);
+const db=getDatabase(appFB);
+
 let currentUser=null;
-let currentChat="global";
-let typingTimeout;
+let currentChat="group/main";
 
-const siteAccessEl=document.getElementById("siteAccess");
-const loginEl=document.getElementById("login");
-const sitePassEl=document.getElementById("sitePass");
-const siteErrEl=document.getElementById("siteErr");
-const loginErr=document.getElementById("loginErr");
-const usersDiv=document.getElementById("users");
-const adminPanel=document.getElementById("adminPanel");
-
-// SITE ACCESS
+/* ACCESS */
 window.checkSite=()=>{
-  if(sitePassEl.value===SITE_PASSWORD){
-    siteAccessEl.style.display="none";
-    loginEl.style.display="flex";
-    siteErrEl.textContent="";
-  } else siteErrEl.textContent="Incorrect site password";
-}
+  if(sitePass.value===SITE_PASSWORD){
+    siteAccess.classList.add("hidden");
+    login.classList.remove("hidden");
+  }else siteErr.textContent="Wrong site password";
+};
 
-// LOGIN
+/* LOGIN */
 window.login=()=>{
   const u=username.value.trim();
   const p=pin.value.trim();
-  if(!u||!p)return;
   if(!USERS[u]||USERS[u]!==p){
     loginErr.textContent="Invalid login";
     return;
   }
   currentUser=u;
-  loginEl.style.display="none";
-  document.getElementById("app").style.display="flex";
+  login.classList.add("hidden");
+  app.classList.remove("hidden");
 
   if(u==="Elnathan") adminPanel.classList.remove("hidden");
 
@@ -166,121 +215,93 @@ window.login=()=>{
   onDisconnect(ref(db,"status/"+u)).set(false);
 
   loadUsers();
-  listenMessages(currentChat);
-  setupTyping();
-}
+  listenMessages();
+};
 
-// LOAD USERS
+/* USERS LIST */
 function loadUsers(){
-  usersDiv.innerHTML="";
+  sidebar.innerHTML="";
+  const g=document.createElement("div");
+  g.className="user";
+  g.textContent="👥 Group Chat";
+  g.onclick=()=>openGroup();
+  sidebar.appendChild(g);
+
   Object.keys(USERS).forEach(u=>{
+    if(u===currentUser) return;
     const d=document.createElement("div");
     d.className="user";
-    const dot=document.createElement("div");
-    dot.className="status offline";
-    d.appendChild(dot);
-    const span=document.createElement("span");
-    span.textContent=u;
-    d.appendChild(span);
-    d.addEventListener("click",()=>openDM(u));
-    usersDiv.appendChild(d);
+    const s=document.createElement("div");
+    s.className="status offline";
+    d.appendChild(s);
+    d.append(u);
+    d.onclick=()=>openDM(u);
+    sidebar.appendChild(d);
 
-    // online status listener
     onValue(ref(db,"status/"+u),snap=>{
-      if(snap.val()){dot.className="status online"} else {dot.className="status offline"}
+      s.className="status "+(snap.val()?"online":"offline");
     });
   });
 }
 
-// OPEN DM
-function openDM(user){
-  if(user===currentUser){currentChat="global"} else {
-    const chatId=[currentUser,user].sort().join("_");
-    currentChat="dm/"+chatId;
-  }
-  listenMessages(currentChat);
+function openDM(u){
+  currentChat="dm/"+[currentUser,u].sort().join("_");
+  listenMessages();
+}
+function openGroup(){
+  currentChat="group/main";
+  listenMessages();
 }
 
-// LISTEN MESSAGES
-function listenMessages(path){
+/* MESSAGES */
+function listenMessages(){
   messages.innerHTML="";
-  onValue(ref(db,"messages/"+path),snap=>{
+  onValue(ref(db,"messages/"+currentChat),snap=>{
     messages.innerHTML="";
     snap.forEach(m=>{
       const d=document.createElement("div");
       d.className="msg"+(m.val().user===currentUser?" me":"");
       d.textContent=`${m.val().user}: ${m.val().text}`;
+      if(m.val().user===currentUser){
+        d.onclick=()=>{ if(confirm("Delete?")) remove(ref(db,"messages/"+currentChat+"/"+m.key)); };
+      }
       messages.appendChild(d);
     });
     messages.scrollTop=messages.scrollHeight;
   });
 }
 
-// SEND MESSAGE
 window.sendMsg=()=>{
   if(!msgInput.value.trim())return;
   push(ref(db,"messages/"+currentChat),{user:currentUser,text:msgInput.value});
   msgInput.value="";
-  sendTyping(false);
-}
-
-// TYPING INDICATOR
-function setupTyping(){
-  msgInput.addEventListener("input",()=>{
-    sendTyping(true);
-    clearTimeout(typingTimeout);
-    typingTimeout=setTimeout(()=>sendTyping(false),1000);
-  });
-}
-
-function sendTyping(state){
-  set(ref(db,"typing/"+currentChat+"/"+currentUser),state);
-  showTyping();
-}
-
-function showTyping(){
-  const typingText=document.getElementById("typingText");
-  onValue(ref(db,"typing/"+currentChat),snap=>{
-    const usersTyping=[];
-    snap.forEach(s=>{
-      if(s.val()&&s.key!==currentUser)usersTyping.push(s.key);
-    });
-    typingText.textContent=usersTyping.length>0?usersTyping.join(", ")+" is typing":"";
-  });
-}
-
-// SETTINGS
-window.toggleSettings=()=>settings.classList.toggle("hidden");
-window.logout=()=>location.reload();
-window.addUser=()=>{
-  if(currentUser!=="Elnathan")return;
-  const u=newUser.value.trim();
-  const p=newPin.value.trim();
-  if(!u||!p)return;
-  USERS[u]=p;
-  loadUsers();
 };
+
+/* SETTINGS */
+window.toggleSettings=()=>{
+  settingsPanel.classList.toggle("open");
+  settingsOverlay.style.display=settingsPanel.classList.contains("open")?"block":"none";
+};
+window.logout=()=>location.reload();
+window.addUser=()=>USERS[newUser.value]=newPin.value;
 </script>
 
 <script>
-// Space background animation
-const c=document.getElementById('space');
-const ctx=c.getContext('2d');
-function resize(){c.width=innerWidth;c.height=innerHeight;}
-window.onresize=resize; resize();
-let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
+const c=document.getElementById("space"),ctx=c.getContext("2d");
+function resize(){c.width=innerWidth;c.height=innerHeight}
+window.onresize=resize;resize();
+let stars=[...Array(200)].map(()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
 (function anim(){
   ctx.clearRect(0,0,c.width,c.height);
   stars.forEach(s=>{
     s.a+=(Math.random()-.5)*.05;
     s.a=Math.max(0,Math.min(1,s.a));
     ctx.fillStyle=`rgba(255,255,255,${s.a})`;
-    ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fill();
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
   });
   requestAnimationFrame(anim);
 })();
 </script>
+
 </body>
 </html>
