@@ -2,131 +2,71 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GalaxyTalk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 *{box-sizing:border-box;font-family:Arial,sans-serif}
 body{margin:0;background:#0b0f2a;color:#fff;height:100vh;overflow:hidden}
 .hidden{display:none}
 
-button{
-  cursor:pointer;
-  background:#6a5cff;
-  color:#fff;
-  border:none;
-  border-radius:8px;
-  padding:10px 14px;
-}
+/* Access + Login */
+.center{height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:#141a4f;padding:25px;border-radius:12px;width:320px}
+input,button{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:none}
+button{background:#6a5cff;color:#fff;cursor:pointer}
+.error{color:#ff6b6b;height:16px;font-size:14px}
 
-input{
-  width:100%;
-  padding:10px;
-  margin:8px 0;
-  border-radius:8px;
-  border:none;
-}
-
-.error{color:#ff6b6b;font-size:14px;height:16px}
-
-/* ACCESS + LOGIN */
-.screen{
-  height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-.card{
-  background:rgba(20,26,79,0.95);
-  padding:25px;
-  border-radius:14px;
-  width:320px;
-  text-align:center;
-  box-shadow:0 0 25px #6a5cff;
-}
-
-/* APP */
+/* App layout */
 #app{display:flex;height:100vh}
-
-#sidebar{
-  width:260px;
-  background:#0f1440;
-  display:flex;
-  flex-direction:column;
-}
-
+#sidebar{width:260px;background:#0f1440;display:flex;flex-direction:column}
 #users{flex:1;overflow-y:auto}
-
-.user{
-  padding:10px;
-  border-bottom:1px solid #222;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-.dot{width:8px;height:8px;border-radius:50%;background:#777}
+.user{padding:10px;border-bottom:1px solid #222;display:flex;gap:8px;cursor:pointer}
+.status{width:8px;height:8px;border-radius:50%}
 .online{background:#4cff4c}
+.offline{background:#777}
 
+/* Chat */
 #chat{flex:1;display:flex;flex-direction:column}
-
-#messages{flex:1;overflow-y:auto;padding:10px}
-
+#messages{flex:1;padding:10px;overflow-y:auto}
 .msg{margin-bottom:6px}
 .me{color:#7aa2ff}
 
-#inputBar{
-  display:flex;
-  gap:8px;
-  padding:10px;
-  background:#0f1440;
-}
+#typing{height:20px;font-style:italic;color:#aaa}
+.dot{animation:blink 1.4s infinite both}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
 
+#inputBar{display:flex;gap:6px;padding:10px;background:#0f1440}
 #msgInput{flex:1}
 
-/* SETTINGS */
-#settingsBtn{
-  position:absolute;
-  bottom:12px;
-  left:12px;
-  width:44px;
-  height:44px;
-  border-radius:50%;
-}
-
-#settingsPanel{
-  position:absolute;
-  bottom:64px;
-  left:12px;
-  background:#141a4f;
-  padding:15px;
-  border-radius:12px;
-  width:220px;
-}
+/* Settings */
+#settingsBtn{position:absolute;bottom:12px;left:12px;width:42px;height:42px;border-radius:50%;background:#6a5cff;color:#fff}
+#settings{position:absolute;bottom:60px;left:12px;background:#141a4f;padding:15px;border-radius:10px;width:220px}
 </style>
 </head>
 
 <body>
 
-<!-- SITE ACCESS -->
-<div id="siteAccess" class="screen">
+<!-- ACCESS -->
+<div id="siteAccess" class="center">
   <div class="card">
     <h2>GalaxyTalk</h2>
-    <input id="sitePass" type="password">
+    <input id="sitePass" type="password" placeholder="Access password">
     <div id="siteErr" class="error"></div>
     <button onclick="checkSite()">Enter</button>
   </div>
 </div>
 
 <!-- LOGIN -->
-<div id="login" class="screen hidden">
+<div id="login" class="center hidden">
   <div class="card">
     <h3>Login</h3>
-    <input id="userInput">
-    <input id="pinInput" type="password">
+    <input id="username" placeholder="Username">
+    <input id="pin" type="password" placeholder="4-digit PIN">
     <div id="loginErr" class="error"></div>
-    <button onclick="loginUser()">Login</button>
+    <button onclick="login()">Login</button>
   </div>
 </div>
 
@@ -138,22 +78,27 @@ input{
 
   <div id="chat">
     <div id="messages"></div>
+    <div id="typing"><span id="typingText"></span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
     <div id="inputBar">
-      <input id="msgInput">
+      <input id="msgInput" placeholder="Message">
       <button onclick="sendMsg()">Send</button>
     </div>
   </div>
 
   <button id="settingsBtn" onclick="toggleSettings()">⚙</button>
 
-  <div id="settingsPanel" class="hidden">
-    <h4>Admin Panel</h4>
-    <input id="newUser">
-    <input id="newPin">
-    <button onclick="addUser()">Add User</button>
+  <div id="settings" class="hidden">
+    <div id="adminPanel" class="hidden">
+      <h4>Admin</h4>
+      <input id="newUser" placeholder="Username">
+      <input id="newPin" placeholder="PIN">
+      <button onclick="addUser()">Add</button>
+    </div>
+    <button onclick="logout()">Logout</button>
   </div>
 </div>
 
+<!-- PASSWORD LOGIC (DO NOT TOUCH) -->
 <script>
 const SITE_PASSWORD = "1886";
 
@@ -162,14 +107,93 @@ const loginEl = document.getElementById("login");
 const sitePassEl = document.getElementById("sitePass");
 const siteErrEl = document.getElementById("siteErr");
 
-window.checkSite = () => {
-  if (sitePassEl.value === SITE_PASSWORD) {
-    siteAccessEl.style.display = "none";
-    loginEl.style.display = "flex";
-    siteErrEl.textContent = "";
-  } else {
-    siteErrEl.textContent = "Incorrect site password";
+function checkSite(){
+  if(sitePassEl.value === SITE_PASSWORD){
+    siteAccessEl.style.display="none";
+    loginEl.style.display="flex";
+    siteErrEl.textContent="";
+  }else{
+    siteErrEl.textContent="Incorrect site password";
   }
+}
+</script>
+
+<!-- FIREBASE + APP -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getDatabase, ref, set, get, push, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
+  authDomain:"galaxytalk-7d3bd.firebaseapp.com",
+  databaseURL:"https://galaxytalk-7d3bd-default-rtdb.firebaseio.com",
+  projectId:"galaxytalk-7d3bd"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getDatabase(app);
+
+let currentUser=null;
+
+window.login=async()=>{
+  const u=username.value.trim();
+  const p=pin.value.trim();
+  const snap=await get(ref(db,"users/"+u));
+  if(!snap.exists()||snap.val().pin!==p){
+    loginErr.textContent="Invalid login";
+    return;
+  }
+  currentUser=u;
+  loginEl.style.display="none";
+  document.getElementById("app").style.display="flex";
+
+  if(u==="Elnathan") adminPanel.classList.remove("hidden");
+
+  const sRef=ref(db,"status/"+u);
+  set(sRef,true);
+  onDisconnect(sRef).set(false);
+
+  loadUsers();
+  listenMessages();
+};
+
+function loadUsers(){
+  onValue(ref(db,"status"),snap=>{
+    users.innerHTML="";
+    snap.forEach(u=>{
+      const d=document.createElement("div");
+      d.className="user";
+      d.innerHTML=`<div class="status ${u.val()?'online':'offline'}"></div>${u.key}`;
+      users.appendChild(d);
+    });
+  });
+}
+
+function listenMessages(){
+  onValue(ref(db,"messages/global"),snap=>{
+    messages.innerHTML="";
+    snap.forEach(m=>{
+      const d=document.createElement("div");
+      d.className="msg"+(m.val().user===currentUser?" me":"");
+      d.textContent=`${m.val().user}: ${m.val().text}`;
+      messages.appendChild(d);
+    });
+    messages.scrollTop=messages.scrollHeight;
+  });
+}
+
+window.sendMsg=()=>{
+  if(!msgInput.value.trim())return;
+  push(ref(db,"messages/global"),{user:currentUser,text:msgInput.value});
+  msgInput.value="";
+};
+
+window.toggleSettings=()=>settings.classList.toggle("hidden");
+window.logout=()=>location.reload();
+
+window.addUser=()=>{
+  if(currentUser!=="Elnathan")return;
+  set(ref(db,"users/"+newUser.value),{pin:newPin.value});
 };
 </script>
 
