@@ -154,127 +154,23 @@ input{
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, push, onValue, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyB5AN9HLYx59Yue-aNb5ACHFKuy7X7aFPQ",
-  authDomain: "galaxytalk-7d3bd.firebaseapp.com",
-  databaseURL: "https://galaxytalk-7d3bd-default-rtdb.firebaseio.com",
-  projectId: "galaxytalk-7d3bd"
-};
-
-const appFB = initializeApp(firebaseConfig);
-const db = getDatabase(appFB);
-
+<script>
 const SITE_PASSWORD = "1886";
 
-const siteAccess = document.getElementById("siteAccess");
-const login = document.getElementById("login");
-const app = document.getElementById("app");
+function checkSite() {
+  const input = document.getElementById("sitePass").value.trim();
+  const err = document.getElementById("siteErr");
 
-const sitePass = document.getElementById("sitePass");
-const siteErr = document.getElementById("siteErr");
-
-const userInput = document.getElementById("userInput");
-const pinInput = document.getElementById("pinInput");
-const loginErr = document.getElementById("loginErr");
-
-const usersDiv = document.getElementById("users");
-const messagesDiv = document.getElementById("messages");
-const msgInput = document.getElementById("msgInput");
-
-const settingsPanel = document.getElementById("settingsPanel");
-const newUser = document.getElementById("newUser");
-const newPin = document.getElementById("newPin");
-
-let currentUser = null;
-
-/* SITE ACCESS — FIXED */
-window.checkSite = () => {
-  if (sitePass.value.trim() === SITE_PASSWORD) {
-    siteAccess.classList.add("hidden");
-    login.classList.remove("hidden");
-    siteErr.textContent = "";
+  if (input === SITE_PASSWORD) {
+    document.getElementById("siteAccess").classList.add("hidden");
+    document.getElementById("login").classList.remove("hidden");
+    err.textContent = "";
   } else {
-    siteErr.textContent = "Incorrect site password";
+    err.textContent = "Incorrect site password";
   }
-};
-
-/* LOGIN */
-window.loginUser = async () => {
-  const u = userInput.value.trim();
-  const p = pinInput.value.trim();
-  if (!u || !p) return;
-
-  const snap = await get(ref(db,"users/"+u));
-  if (!snap.exists() || snap.val().pin !== p) {
-    loginErr.textContent = "Invalid login";
-    return;
-  }
-
-  currentUser = u;
-  login.classList.add("hidden");
-  app.classList.remove("hidden");
-
-  const statusRef = ref(db,"status/"+u);
-  set(statusRef,true);
-  onDisconnect(statusRef).set(false);
-
-  loadUsers();
-  loadMessages();
-};
-
-/* USERS */
-function loadUsers(){
-  onValue(ref(db,"users"), snap=>{
-    usersDiv.innerHTML="";
-    snap.forEach(u=>{
-      const row=document.createElement("div");
-      row.className="user";
-      row.innerHTML=`<div class="dot" id="dot-${u.key}"></div>${u.key}`;
-      usersDiv.appendChild(row);
-
-      onValue(ref(db,"status/"+u.key), s=>{
-        const dot=document.getElementById("dot-"+u.key);
-        if(dot) dot.classList.toggle("online",s.val()===true);
-      });
-    });
-  });
 }
-
-/* MESSAGES */
-function loadMessages(){
-  onValue(ref(db,"messages/global"), snap=>{
-    messagesDiv.innerHTML="";
-    snap.forEach(m=>{
-      const d=document.createElement("div");
-      d.className="msg"+(m.val().user===currentUser?" me":"");
-      d.textContent=`${m.val().user}: ${m.val().text}`;
-      messagesDiv.appendChild(d);
-    });
-    messagesDiv.scrollTop=messagesDiv.scrollHeight;
-  });
-}
-
-window.sendMsg = () => {
-  if (!msgInput.value.trim()) return;
-  push(ref(db,"messages/global"),{user:currentUser,text:msgInput.value});
-  msgInput.value="";
-};
-
-/* SETTINGS — APP ONLY */
-window.toggleSettings = () => {
-  if(currentUser!=="Elnathan") return;
-  settingsPanel.classList.toggle("hidden");
-};
-
-window.addUser = () => {
-  if(currentUser!=="Elnathan") return;
-  set(ref(db,"users/"+newUser.value),{pin:newPin.value});
-};
 </script>
+
 
 </body>
 </html>
