@@ -5,34 +5,49 @@
 <title>GalaxyTalk</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-*{box-sizing:border-box;font-family:Arial,sans-serif}
-body{margin:0;background:black;color:#fff;height:100vh;overflow:hidden}
+*{box-sizing:border-box;font-family:Arial,sans-serif;margin:0;padding:0}
+body{height:100vh;background:black;color:#fff;overflow:hidden}
+canvas{position:fixed;inset:0;z-index:-1}
+
+/* General hidden */
 .hidden{display:none}
+
+/* Login & site access */
 .center{height:100vh;display:flex;align-items:center;justify-content:center}
 .card{background:rgba(60,0,90,0.85);padding:25px;border-radius:12px;width:320px;text-align:center}
 input,button{width:100%;padding:10px;margin-top:10px;border-radius:6px;border:none}
 button{background:#6a5cff;color:#fff;cursor:pointer}
 .error{color:#ff6b6b;height:16px;font-size:14px}
-canvas{position:fixed;inset:0;z-index:-1}
+
+/* Layout */
 #app{display:flex;height:100vh}
 #sidebar{width:260px;background:#0f1440;display:flex;flex-direction:column}
 #users{flex:1;overflow-y:auto}
-.user{padding:10px;border-bottom:1px solid #222;display:flex;gap:8px;cursor:pointer}
-.status{width:8px;height:8px;border-radius:50%}
+.user{padding:10px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;cursor:pointer}
+.status{width:10px;height:10px;border-radius:50%}
 .online{background:#4cff4c}
 .offline{background:#777}
+
+/* Chat */
 #chat{flex:1;display:flex;flex-direction:column}
 #messages{flex:1;padding:10px;overflow-y:auto}
 .msg{margin-bottom:6px}
 .me{color:#7aa2ff}
+
+/* Typing */
 #typing{height:20px;font-style:italic;color:#aaa}
-.dot{animation:blink 1.4s infinite both}
+.dot{animation:blink 1.4s infinite both;margin:0 1px}
 .dot:nth-child(2){animation-delay:.2s}
 .dot:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+
+/* Input bar */
 #inputBar{display:flex;gap:6px;padding:10px;background:#0f1440}
-#msgInput{flex:1}
-#settingsBtn{position:absolute;bottom:12px;left:12px;width:42px;height:42px;border-radius:50%;background:#6a5cff;color:#fff}
+#msgInput{flex:1;padding:12px;border-radius:6px;border:none;font-size:14px}
+#sendBtn{width:60px;padding:0 10px;font-size:14px}
+
+/* Settings */
+#settingsBtn{position:absolute;bottom:12px;left:12px;width:42px;height:42px;border-radius:50%;background:#6a5cff;color:#fff;font-size:18px}
 #settings{position:absolute;bottom:60px;left:12px;background:#141a4f;padding:15px;border-radius:10px;width:220px}
 </style>
 </head>
@@ -40,17 +55,17 @@ canvas{position:fixed;inset:0;z-index:-1}
 
 <canvas id="space"></canvas>
 
-<!-- SITE ACCESS -->
+<!-- Site Access -->
 <div id="siteAccess" class="center">
   <div class="card">
     <h2>GalaxyTalk</h2>
-    <input id="sitePass" type="password" placeholder="Site access password">
+    <input id="sitePass" type="password" placeholder="Site password">
     <div id="siteErr" class="error"></div>
     <button onclick="checkSite()">Enter</button>
   </div>
 </div>
 
-<!-- LOGIN -->
+<!-- Login -->
 <div id="login" class="center hidden">
   <div class="card">
     <h3>Login</h3>
@@ -61,7 +76,7 @@ canvas{position:fixed;inset:0;z-index:-1}
   </div>
 </div>
 
-<!-- APP -->
+<!-- App -->
 <div id="app" class="hidden">
   <div id="sidebar">
     <div id="users"></div>
@@ -71,13 +86,14 @@ canvas{position:fixed;inset:0;z-index:-1}
     <div id="typing"><span id="typingText"></span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
     <div id="inputBar">
       <input id="msgInput" placeholder="Message">
-      <button onclick="sendMsg()">Send</button>
+      <button id="sendBtn" onclick="sendMsg()">Send</button>
     </div>
   </div>
+
   <button id="settingsBtn" onclick="toggleSettings()">⚙</button>
   <div id="settings" class="hidden">
     <div id="adminPanel" class="hidden">
-      <h4>Admin</h4>
+      <h4>Admin Panel</h4>
       <input id="newUser" placeholder="Username">
       <input id="newPin" placeholder="PIN">
       <button onclick="addUser()">Add</button>
@@ -88,7 +104,7 @@ canvas{position:fixed;inset:0;z-index:-1}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
+import { getDatabase, ref, push, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
 
 // Firebase config
 const firebaseConfig={
@@ -101,27 +117,30 @@ const app=initializeApp(firebaseConfig);
 const db=getDatabase(app);
 
 /* USERS */
-const USERS = {
-  "Faheemah":"9846","SamuelR":"5891","SamuelC":"2339","Ethan":"8213",
-  "Elnathan":"9999","Caroline":"4006","Molly":"2296","Zara":"6701",
-  "Danny":"7494","Shell-Lee":"0754","Raygan":"5124","Jacob":"7596",
-  "Nathan":"2006","Kiera":"4888","Karter":"1115","Meadleen":"5565",
-  "Eli":"0758","Hadlee":"9160"
+const USERS={
+"Faheemah":"9846","SamuelR":"5891","SamuelC":"2339","Ethan":"8213",
+"Elnathan":"9999","Caroline":"4006","Molly":"2296","Zara":"6701",
+"Danny":"7494","Shell-Lee":"0754","Raygan":"5124","Jacob":"7596",
+"Nathan":"2006","Kiera":"4888","Karter":"1115","Meadleen":"5565",
+"Eli":"0758","Hadlee":"9160"
 };
 
-let currentUser=null;
 const SITE_PASSWORD="1886";
+let currentUser=null;
+let currentChat="global";
+let typingTimeout;
 
 const siteAccessEl=document.getElementById("siteAccess");
 const loginEl=document.getElementById("login");
 const sitePassEl=document.getElementById("sitePass");
 const siteErrEl=document.getElementById("siteErr");
 const loginErr=document.getElementById("loginErr");
+const usersDiv=document.getElementById("users");
 const adminPanel=document.getElementById("adminPanel");
 
 // SITE ACCESS
-window.checkSite = () => {
-  if(sitePassEl.value === SITE_PASSWORD){
+window.checkSite=()=>{
+  if(sitePassEl.value===SITE_PASSWORD){
     siteAccessEl.style.display="none";
     loginEl.style.display="flex";
     siteErrEl.textContent="";
@@ -129,42 +148,63 @@ window.checkSite = () => {
 }
 
 // LOGIN
-window.login = () => {
+window.login=()=>{
   const u=username.value.trim();
   const p=pin.value.trim();
-  if(!u||!p) return;
-
-  if(!USERS[u] || USERS[u] !== p){
+  if(!u||!p)return;
+  if(!USERS[u]||USERS[u]!==p){
     loginErr.textContent="Invalid login";
     return;
   }
-
   currentUser=u;
   loginEl.style.display="none";
   document.getElementById("app").style.display="flex";
 
   if(u==="Elnathan") adminPanel.classList.remove("hidden");
 
+  set(ref(db,"status/"+u),true);
+  onDisconnect(ref(db,"status/"+u)).set(false);
+
   loadUsers();
-  listenMessages();
+  listenMessages(currentChat);
+  setupTyping();
 }
 
 // LOAD USERS
 function loadUsers(){
-  onValue(ref(db,"users"),snap=>{
-    users.innerHTML="";
-    Object.keys(USERS).forEach(u=>{
-      const d=document.createElement("div");
-      d.className="user";
-      d.innerHTML=`<div class="status offline"></div>${u}`;
-      users.appendChild(d);
+  usersDiv.innerHTML="";
+  Object.keys(USERS).forEach(u=>{
+    const d=document.createElement("div");
+    d.className="user";
+    const dot=document.createElement("div");
+    dot.className="status offline";
+    d.appendChild(dot);
+    const span=document.createElement("span");
+    span.textContent=u;
+    d.appendChild(span);
+    d.addEventListener("click",()=>openDM(u));
+    usersDiv.appendChild(d);
+
+    // online status listener
+    onValue(ref(db,"status/"+u),snap=>{
+      if(snap.val()){dot.className="status online"} else {dot.className="status offline"}
     });
   });
 }
 
-// MESSAGES
-function listenMessages(){
-  onValue(ref(db,"messages/global"),snap=>{
+// OPEN DM
+function openDM(user){
+  if(user===currentUser){currentChat="global"} else {
+    const chatId=[currentUser,user].sort().join("_");
+    currentChat="dm/"+chatId;
+  }
+  listenMessages(currentChat);
+}
+
+// LISTEN MESSAGES
+function listenMessages(path){
+  messages.innerHTML="";
+  onValue(ref(db,"messages/"+path),snap=>{
     messages.innerHTML="";
     snap.forEach(m=>{
       const d=document.createElement("div");
@@ -177,18 +217,48 @@ function listenMessages(){
 }
 
 // SEND MESSAGE
-window.sendMsg = ()=>{
-  if(!msgInput.value.trim()) return;
-  push(ref(db,"messages/global"),{user:currentUser,text:msgInput.value});
+window.sendMsg=()=>{
+  if(!msgInput.value.trim())return;
+  push(ref(db,"messages/"+currentChat),{user:currentUser,text:msgInput.value});
   msgInput.value="";
+  sendTyping(false);
+}
+
+// TYPING INDICATOR
+function setupTyping(){
+  msgInput.addEventListener("input",()=>{
+    sendTyping(true);
+    clearTimeout(typingTimeout);
+    typingTimeout=setTimeout(()=>sendTyping(false),1000);
+  });
+}
+
+function sendTyping(state){
+  set(ref(db,"typing/"+currentChat+"/"+currentUser),state);
+  showTyping();
+}
+
+function showTyping(){
+  const typingText=document.getElementById("typingText");
+  onValue(ref(db,"typing/"+currentChat),snap=>{
+    const usersTyping=[];
+    snap.forEach(s=>{
+      if(s.val()&&s.key!==currentUser)usersTyping.push(s.key);
+    });
+    typingText.textContent=usersTyping.length>0?usersTyping.join(", ")+" is typing":"";
+  });
 }
 
 // SETTINGS
-window.toggleSettings = ()=>settings.classList.toggle("hidden");
-window.logout = ()=>location.reload();
-window.addUser = ()=>{
-  if(currentUser!=="Elnathan") return;
-  USERS[newUser.value]=newPin.value;
+window.toggleSettings=()=>settings.classList.toggle("hidden");
+window.logout=()=>location.reload();
+window.addUser=()=>{
+  if(currentUser!=="Elnathan")return;
+  const u=newUser.value.trim();
+  const p=newPin.value.trim();
+  if(!u||!p)return;
+  USERS[u]=p;
+  loadUsers();
 };
 </script>
 
