@@ -1,28 +1,71 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Our App</title>
+    
     <style>
-    .download-button {
-        background-color: #007bff; /* Blue background */
-        color: white; /* White text */
-        padding: 10px 20px; /* Spacing inside the button */
-        text-align: center; /* Center the text */
-        text-decoration: none; /* Remove default anchor underline */
-        display: inline-block; /* Allows padding and margins */
-        border-radius: 5px; /* Rounded corners */
-        cursor: pointer; /* Changes cursor to a hand icon */
-        border: none; /* Remove default button border if using <button> */
-    }
+        /* Base page styling */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+        }
 
-    .download-button:hover {
-        background-color: #0056b3; /* Darker blue on hover */
-    }
-</style>
-<title>Install Now!</title>
-  </head>
-    <body>
-      <a href="/app-release.apk" download="app-release.apk" class="download-button">
-    Install Software Now
-</a>
-    </body>
+        /* The Button Style */
+        .apk-download-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: #3DDC84; /* Android Green */
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(61, 220, 132, 0.3);
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+        }
+
+        /* Hover and click effects */
+        .apk-download-btn:hover {
+            background-color: #32b36b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(61, 220, 132, 0.4);
+        }
+
+        .apk-download-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Simple container for layout */
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Ready to start?</h2>
+        <p>Click below to download the official Android app.</p>
+        
+        <!-- The Download Link -->
+        <a href="app-release.apk" 
+           download="app-release.apk" 
+           class="apk-download-btn">
+           Download APK
+        </a>
+    </div>
+
+</body>
 </html>
