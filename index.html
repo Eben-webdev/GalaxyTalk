@@ -41,7 +41,8 @@ input{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:none}
 #msgInput{flex:1;padding:10px;border-radius:6px;border:none}
 
 #settingsBtn{position:absolute;bottom:10px;left:10px;background:#6a5cff;border:none;border-radius:50%;width:42px;height:42px;color:#fff;font-size:18px}
-#settingsPanel{position:absolute;bottom:60px;left:10px;background:#141a4f;padding:15px;border-radius:10px;width:220px} </style>
+#settingsPanel{position:absolute;bottom:60px;left:10px;background:#141a4f;padding:15px;border-radius:10px;width:220px}
+button.btn{width:100%;background:black;color:white;border:1px solid purple;border-radius:8px;padding:10px;margin-top:10px}button.btn:hover </style>
 
 </head>
 <body>
@@ -51,9 +52,7 @@ input{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:none}
     <h2>GalaxyTalk</h2>
     <input id="sitePass" type="password" placeholder="Site password">
     <div id="siteErr" class="error"></div>
-    <button onclick="checkSite()">Enter</button>
-  </div>
-</div>
+    <button class="btn" onclick="checkSite()">Enter</button>iv>
 
 <div id="login" class="hidden">
   <div class="box">
@@ -61,9 +60,7 @@ input{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:none}
     <input id="userInput" placeholder="Username">
     <input id="pinInput" type="password" placeholder="4-digit PIN">
     <div id="loginErr" class="error"></div>
-    <button onclick="loginUser()">Login</button>
-  </div>
-</div>
+    <button oncli<button class="btn" onclick="login()">Login</button>iv>
 
 <div id="app" class="hidden">
   <div id="sidebar">
@@ -138,4 +135,13 @@ function login(){
 </script>
 
 </body>
-</html>
+</htm<script>
+// SPACE BACKGROUND (RESTORED)
+const c=document.getElementById('space');
+const ctx=c.getContext('2d');
+function resize(){c.width=innerWidth;c.height=innerHeight}
+resize();window.onresize=resize;
+let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
+(function anim(){ctx.clearRect(0,0,c.width,c.height);stars.forEach(s=>{s.a+=(Math.random()-.5)*.05;s.a=Math.max(0,Math.min(1,s.a));ctx.fillStyle=`rgba(255,255,255,${s.a})`;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();});requestAnimationFrame(anim);})();
+</script>
+</body>
