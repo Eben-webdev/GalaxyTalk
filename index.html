@@ -6,61 +6,77 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GalaxyTalk</title>
 <style>
-*{box-sizing:border-box;font-family:Arial,sans-serif}
-body{margin:0;background:#0b0f2a;color:#fff;height:100vh;overflow:hidden}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body{margin:0;background:black;color:#eee;overflow:hidden}
 .hidden{display:none}
-button{cursor:pointer}
+canvas{position:fixed;inset:0;z-index:-1}
 
-/* Access */
-#siteAccess,#login{height:100vh;display:flex;align-items:center;justify-content:center}
-.box{background:#141a4f;padding:25px;border-radius:12px;width:300px;text-align:center}
-input{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:none}
-.error{color:#ff6b6b;font-size:14px;height:16px}
+/* Cards / Login */
+.center{height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:rgba(40,0,70,.9);padding:28px;border-radius:16px;width:340px;box-shadow:0 0 30px rgba(160,80,255,.6);text-align:center}
+.card h2,.card h3{margin-top:0}
 
-/* Layout */
+input{width:100%;padding:12px 14px;margin-top:12px;border-radius:10px;border:1px solid #5b2b82;background:#0e0018;color:#fff;font-size:15px}
+input::placeholder{color:#aaa}
+
+.btn{width:100%;margin-top:14px;padding:12px;border-radius:999px;border:1px solid #a855f7;background:linear-gradient(135deg,#3b0764,#7e22ce);color:white;font-weight:600;letter-spacing:.3px}
+.btn:hover{filter:brightness(1.15)}
+
+.error{color:#ff6b6b;font-size:14px;min-height:18px;margin-top:6px}
+
+/* App layout */
 #app{display:flex;height:100vh}
-#sidebar{width:260px;background:#0f1440;display:flex;flex-direction:column}
-#users{flex:1;overflow-y:auto}
-.user{padding:10px;border-bottom:1px solid #222;display:flex;align-items:center;gap:8px;cursor:pointer}
-.dotStatus{width:8px;height:8px;border-radius:50%}
-.online{background:#4cff4c}
-.offline{background:#777}
+#sidebar{width:280px;background:rgba(20,0,40,.85);backdrop-filter:blur(6px);padding:12px;display:flex;flex-direction:column}
+#sidebar h3{margin:6px 6px 10px}
 
-#chat{flex:1;display:flex;flex-direction:column}
-#messages{flex:1;overflow-y:auto;padding:10px}
-.msg{margin-bottom:6px}
-.me{color:#7aa2ff}
-#typingIndicator{height:18px;font-style:italic;color:#bbb;display:flex;align-items:center}
-.dot{opacity:0;animation:blink 1.4s infinite both}
-.dot:nth-child(2){animation-delay:0s}
-.dot:nth-child(3){animation-delay:.2s}
-.dot:nth-child(4){animation-delay:.4s}
-@keyframes blink{0%{opacity:0}20%{opacity:1}100%{opacity:0}}
+.user{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;transition:.15s}
+.user:hover{background:rgba(255,255,255,.08)}
 
-#inputBar{display:flex;padding:10px;background:#0f1440}
-#msgInput{flex:1;padding:10px;border-radius:6px;border:none}
+.status{width:10px;height:10px;border-radius:50%}
+.online{background:#4ade80}
+.offline{background:#6b7280}
 
-#settingsBtn{position:absolute;bottom:10px;left:10px;background:#6a5cff;border:none;border-radius:50%;width:42px;height:42px;color:#fff;font-size:18px}
-#settingsPanel{position:absolute;bottom:60px;left:10px;background:#141a4f;padding:15px;border-radius:10px;width:220px}
-button.btn{width:100%;background:black;color:white;border:1px solid purple;border-radius:8px;padding:10px;margin-top:10px}button.btn:hover </style>
+#chat{flex:1;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(20,0,40,.6),rgba(5,0,10,.8))}
+#messages{flex:1;padding:16px;overflow-y:auto}
+
+.msg{max-width:70%;padding:10px 14px;margin-bottom:10px;border-radius:14px;background:rgba(130,0,170,.35)}
+.me{margin-left:auto;background:linear-gradient(135deg,#6d28d9,#9333ea)}
+
+#typing{height:20px;padding-left:16px;color:#bbb;font-style:italic}
+
+#inputBar{display:flex;gap:10px;padding:14px;background:rgba(20,0,40,.9)}
+#msgInput{flex:1;font-size:16px}
+#sendBtn{width:90px}
+
+/* Settings */
+#settingsBtn{position:fixed;bottom:16px;left:16px;width:46px;height:46px;border-radius:50%;border:none;background:linear-gradient(135deg,#6d28d9,#9333ea);color:white;font-size:20px}
+#settings{position:fixed;bottom:70px;left:16px;background:rgba(30,0,60,.95);padding:16px;border-radius:14px;width:240px;box-shadow:0 0 25px rgba(160,80,255,.5)} </style>
 
 </head>
 <body>
+<canvas id="space"></canvas>
 
-<div id="siteAccess">
-  <div class="box">
+<div id="siteAccess" class="center">
+  <div class="card">
     <h2>GalaxyTalk</h2>
     <input id="sitePass" type="password" placeholder="Site password">
     <div id="siteErr" class="error"></div>
-    <button class="btn" onclick="checkSite()">Enter</button>iv>
+    <button class="btn" onclick="checkSite()">Enter</button>
+  </div>
+</div>
 
-<div id="login" class="hidden">
-  <div class="box">
+<div id="login" class="center hidden">
+  <div class="card">
     <h3>Login</h3>
-    <input id="userInput" placeholder="Username">
-    <input id="pinInput" type="password" placeholder="4-digit PIN">
+    <input id="username" placeholder="Username">
+    <input id="pin" type="password" placeholder="4-digit PIN">
     <div id="loginErr" class="error"></div>
-    <button oncli<button class="btn" onclick="login()">Login</button>iv>
+    <button class="btn" onclick="login()">Login</button>
+  </div>
+</div>
+    <button class="btn" onclick="login()">Login</button>
+  </div>
+</div>
 
 <div id="app" class="hidden">
   <div id="sidebar">
@@ -69,7 +85,7 @@ button.btn{width:100%;background:black;color:white;border:1px solid purple;borde
 
   <div id="chat">
     <div id="messages"></div>
-    <div id="typingIndicator"><span id="typingText"></span><span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+    <div id="typing" class="hidden"></div>
     <div id="inputBar">
       <input id="msgInput" placeholder="Message">
       <button onclick="sendMsg()">Send</button>
@@ -78,12 +94,12 @@ button.btn{width:100%;background:black;color:white;border:1px solid purple;borde
 
 <button id="settingsBtn" onclick="toggleSettings()">⚙</button>
 
-  <div id="settingsPanel" class="hidden">
-    <h4>Admin Panel</h4>
-    <input id="newUser" placeholder="Username">
-    <input id="newPin" placeholder="PIN">
-    <button onclick="addUser()">Add User</button>
-  </div>
+  <div id="settings" class="hidden">
+  <h4>Admin Panel</h4>
+  <input id="newUser" placeholder="Username">
+  <input id="newPin" placeholder="PIN">
+  <button class="btn" onclick="addUser()">Add User</button>
+</div>
 </div>
 
 <script>
@@ -129,13 +145,12 @@ function login(){
   document.getElementById("app").classList.remove("hidden");
 
   if(u==="Elnathan"){
-    document.getElementById("adminPanel").classList.remove("hidden");
+    document.getElementById("settingsBtn").classList.remove("hidden");
   }
 }
 </script>
 
-</body>
-</htm<script>
+<script>
 // SPACE BACKGROUND (RESTORED)
 const c=document.getElementById('space');
 const ctx=c.getContext('2d');
@@ -144,4 +159,6 @@ resize();window.onresize=resize;
 let stars=Array.from({length:200},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5,a:Math.random()}));
 (function anim(){ctx.clearRect(0,0,c.width,c.height);stars.forEach(s=>{s.a+=(Math.random()-.5)*.05;s.a=Math.max(0,Math.min(1,s.a));ctx.fillStyle=`rgba(255,255,255,${s.a})`;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();});requestAnimationFrame(anim);})();
 </script>
+
 </body>
+</html>
